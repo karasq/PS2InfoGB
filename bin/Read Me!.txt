@@ -1,0 +1,141 @@
+--------------------------- InfoGB Note ---------------------------
+
+This is PS2InfoGB rev. 5b continued by KarasQ. It's based on dlanor's 
+source of PS2InfoGB rev. 4
+
+PS2 port of InfoGB 0.5J by '7not6'
+
+Revision Date: 2009.03.25
+
+------------------------- Changes history -------------------------
+
+==== InfoGB continued by KarasQ ====
+=> Rev.5b
+     - Fixed bug: program stop on white-screen when folder PS2GB already
+       exists, but the file gb.brm dosen't exist in the same time (hopefully)
+     - Added: USB Mass Sorage Support
+     - Added: ability to run cardridge type ROM+MBC3+TIMER+RAM+BATTERY (read important details bellow!)
+     - Improved: MBC3 controller (should resolve problem with battery-backed save game)
+
+==== InfoGB by dlanor ====
+=> Rev.4
+     - Added pad Triangle reponse like 'Return' and 'BROWSE' entries
+       (Use it to exit from ROM folders or switch between MC/CDROM)
+     - Moved 'Return' entry from end of ROM list to its start instead
+     - Improved fast scroll (D-pad Left/Right now repeats faster)
+     - Fixed a bug that caused duplicate ROM entries for CD listings
+     - Fixed a bug that caused overly long ROM listings to be trashed
+
+=> Rev.3
+     - Added auto_ROM CNF variable, to start a ROM automagically
+     - Restructured the release package to include full source code
+
+=> Rev.2
+     - Added ability to exit from emu to user defined console manager.
+     - Fixed missing support for GBC extensions on CD.
+     - Added PS2GB folder with icon setup suitable for use on MC
+
+=> Rev.1
+     - Major overhaul of emu configuration and user interface.
+
+--------------------- Changes Notes and others ---------------------
+                          important notes!
+
+   [*] Cardridge type 'ROM+MBC3+TIMER+RAM+BATTERY' note
+
+                                -----------------
+This type of cartridge uses for example Pokemon (Silver, Gold, Crystal),
+so it means that since this release should run these games (and other
+games with this type of ROM)
+
+BUT! InfoGB 0.5J is not developed enough. Since PS2InfoGB rev 5b problem with
+battery-backed save game is resolved (hopefully), but there is still one important
+thing which need to be implement:
+
+  - There is no Real Time Clock (RTC) support, so for example in Pokemon 
+    Silver, when you set time to '10:00 AM Monday' at the beginning, this time 
+    will be constant (not self changable during the game, I mean).
+
+I will try to implement it and will see what can I do with that thing.
+                                -----------------
+
+   [*] USB MASS Support
+                                -----------------
+That was my major goal for this release. This PS2InfoGB uses USBHDFSD.IRX rev. 1534
+and USBD.IRX rev. 1494 modules (source code from http://svn.ps2dev.org/)
+
+Here are some rule to use proper this feature:
+
+ 1. ROM(s) have to be placed in dir(s). 
+ 2. Each dir need to be placed in main root of USB mass storage. 
+    (The same rule as for the memory card)
+
+    It's all because the base code is projected this way and I don't have
+    as much time to rewrite it now, but it's still well enough to run your ROMs
+    from USB mass storage and other devices
+
+    example:
+      FILE: rom1.gbc, rom2.zip, rom3.gb
+      You have to create folder in your mass storage device (eg. roms)
+      Now you have to copy all of your ROMs to this folder.
+
+      You can also make dirs "roms1" and "roms2" in main root of device
+      and past to one of them rom1.gbc and to another rest of your ROMs.
+      
+    If you past your ROM(s) to main root of your mass device than these
+    ROMs will be overlooked!
+
+ 3. Names of each ROM shouldn't be longer than 35 characters with extension
+
+USB Mass Support also extended ability added by dlanor in rev. 2 (I mean about
+to exit from emu to user defined console manager). Now it's possible to run
+your ELF file from USB mass storage. You have to edit your INFOGB.CNF placed
+on mc0:/PS2GB/ and change line:
+
+    "boot_ELF = mc0:/BOOT/BOOT.ELF"
+     to
+    "boot_ELF = mass:PATH/YOUR_FILE.ELF"
+
+and save changes.
+
+There is possibility that your USB device can be not recognised by PS2InfoGB!
+I don't guarantee correctly work!
+
+   [*] Other notes
+
+- "Save State to mc0:" and "Load State of mc0:" options still don't work
+  it's just not implemented yet.
+
+- I changed option "Step State Index" to "Gameboy Reset". It's probably
+  not usefull ;) I just tested something and then I just left it.
+
+- The lase one important notes. I just copied it from dlanor's info release
+  and pasted it here:
+
+ "Important reminder for saved games:
+ 
+ If you are playing a game that saves to the GB 'battery RAM', make
+ sure that you never turn off the PS2 while the game screen is showing.
+
+ You need to make sure that the 'battery RAM' of the emulator is also
+ transferred to a separate *.sav file in the save folder 'mc0:/PS2GB/'
+ so that the correct saves can be restored the next time you play the
+ same game. This is NOT done at the time when you save game as part of
+ the gameplay. That only saves to the internal RAM of the emulator.
+
+ The only time when such saves are transferred to mc0 is when you break
+ off playing by using the submenu command "Back to the main menu". This
+ takes you back to the ROM browser where you originally started the game.
+ When you see that browser appear on screen, your saves are saved to the
+ memory card, so you can then turn off the PS2 without 'losing place' in
+ the GB game"
+
+ For more info about previous changes please read dlanor's release note
+ file.
+                                -----------------
+--------------------------------------------------------------------
+
+
+
+
+

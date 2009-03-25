@@ -1,0 +1,168 @@
+---------------------------------------------------------------------------
+File name:      InfoGB_dlanor_rev.txt           Revision Date:  2006.07.22
+Created by:     Ronald Andersson (AKA: dlanor)  Creation Date:  2006.02.05
+---------------------------------------------------------------------------
+Note that I did NOT create the original sources of InfoGB, neither in its
+original form nor for the PS2 port. All I've done here is to modify source
+that others created. (For the PS2 port that was done mainly by '7not6'.)
+---------------------------------------------------------------------------
+This document describes the changes in my revisions of InfoGB for PS2:
+---------------------------------------------------------------------------
+Revision synopsis:
+
+Rev.4  => Added pad Triangle reponse like 'Return' and 'BROWSE' entries
+          (Use it to exit from ROM folders or switch between MC/CDROM)
+          Moved 'Return' entry from end of ROM list to its start instead
+          Improved fast scroll (D-pad Left/Right now repeats faster)
+          Fixed a bug that caused duplicate ROM entries for CD listings
+          Fixed a bug that caused overly long ROM listings to be trashed
+Rev.3  => Added auto_ROM CNF variable, to start a ROM automagically
+          Restructured the release package to include full source code
+Rev.2  => Added ability to exit from emu to user defined console manager.
+          Fixed missing support for GBC extensions on CD.
+          Added PS2GB folder with icon setup suitable for use on MC
+Rev.1  => Major overhaul of emu configuration and user interface.
+---------------------------------------------------------------------------
+GB Button Assignments defined in rev.1:
+
+GB_START      PS2_Triangle \
+GB_SELECT     PS2_Square    \/ This makes the relative placement of the
+GB_A          PS2_Circle    /\ buttons match Nintendo standards better
+GB_B          PS2_Cross    /
+
+Turbo_START    PS2_R2 \
+Turbo_SELECT   PS2_L2  \/ These changes completely replace the old code
+Turbo_A        PS2_R1  /\ for turbo buttons, which simply didn't work.
+Turbo_B        PS2_L1 /
+
+GB_DPAD       PS2_DPAD and PS2_LeftStick (Stick overrides)
+
+
+Special Button Assignment valid while playing:
+
+PS2_Start       => Enter submenu for special commands
+
+
+Special Button Assignments valid only in submenu:
+
+PS2_SELECT+PS2_DPAD     Center screen
+
+---------------------------------------------------------------------------
+Other changes:
+
+All GUI text has been translated to english.
+
+Support for GBC file extensions on CD added (MC already had it).
+
+The second gamepad has been implemented in the PS2 specific code sections,
+but I don't really know if that will work with other sections of the emu,
+as I have no 2-player GameBoy games to test it with.
+
+Submenu now includes commands to "Save CNF" and "Load CNF", and these do
+work properly. Naturally the CNF will also be loaded on startup if found.
+The place for that CNF remains "mc0:/PS2GB/", but the format of the CNF
+has been changed, so that each line in it contains a variable definition,
+consisting of a variable name, an equals sign ('=') and a value string.
+This is to simplify human editing of the CNF file.
+
+The CNF variables, and their default values are:
+    "dispx    = 75"
+    "dispy    = 40"
+    "stretch  = 1"
+    "filter   = 1"
+    "sound    = 0"
+    "boot_ELF = mc0:/BOOT/BOOT.ELF"
+    "auto_ROM = "
+
+The "auto_ROM" variable is used to select a ROM that will automatically be
+started whenever you start the emulator. You can still go back to the main
+menu and choose another ROM instead, so this is just a quick-start option.
+The value specified should be the full pathname of the ROM file to be used.
+For example, I currently use this line in my INFOGB.CNF:
+auto_ROM = mc0:/PS2GB/ZELDA-LINKS_AWAKENING.zip
+
+The "boot_ELF" variable is used for a new menu command that will exit from
+the emulator and start up another ELF file instead. The default path is
+that most commonly used for Dev.1 booting by several mod-chips, but you can
+choose any other path by editing the file on a PC. But please, don't forget
+that this is still running on a PS2, with no real OS. If you enter a path
+for which there are no drivers available at runtime, then access WILL fail.
+
+Recommended use of this feature is to exit from the emulator to a homebrew
+console manager of some sort, whichever you prefer. I use LaunchELF myself,
+so that is what I've used in most of my tests. Hopefully your favourites
+also work equally well this way.
+
+Paths that would work (normal use depends on region and mod-chip):
+mc0:/BOOT/BOOT.ELF
+mc0:/MATRIXTEAM/MANAGER.ELF
+mc0:/BADATA-SYSTEM/BOOT.ELF
+mc0:/BEDATA-SYSTEM/BOOT.ELF
+mc0:/BIDATA-SYSTEM/BOOT.ELF
+rom0:OSDSYS  (This last one simply reboots the console.)
+
+Any other paths you may have on either mc0 or mc1 should also work, but use
+of any other device type depends on whether that type has valid drivers or
+not (left active by launcher). Many devices will not work well with just an
+IRX driver anyway, so such usage is NOT recommended (do it on your own risk).
+
+Submenu also has three new commands that do NOT work yet. That is not
+a 'bug', but simply means that I haven't started to implement them yet.
+Those non-functional commands are:
+"Save State to mc0:"
+"Step State Index"
+"Load State of mc0:"
+Until I implement them, they can do nothing, so don't waste time trying.
+
+---------------------------------------------------------------------------
+Changes as yet NOT implemented:
+
+Save state operations are planned but not yet started.
+
+Creation of the save folder 'mc0:/PS2GB/' should also create a proper
+icon set to make the save valid to the official PS2 Browser. That will
+be done in a future revision. For the present you can simply copy the
+icon.sys and GB_save.icn files from the PS2GB folder of this release
+into the PS2GB folder of your memory card. Note that you must keep the
+character case of those file names unchanged. Otherwise they will not
+be properly recognized by the original PS2 Browser, and the folder will
+still be shown as 'Corrupted'.
+
+---------------------------------------------------------------------------
+Important hint for use with HDLoader or USBExtreme:
+
+When used with those programs this InfoGB version will not be able to
+browse real CDROM discs for GB ROMs. Instead it will browse the CD image
+you installed on the HDD/USB device. So when you are using the ROM browser
+and see texts like "Browse CD" (in the MC browser), or the one that comes
+when you choose "Browse CD", saying "Browse CDROM: - Push Start -", there
+is no need to start digging for any ROM collection CD. (Which is what you
+would do if running the emulator normally.) Instead you just push 'Start'
+directly, and then the browser will show the contents of the installed CD.
+
+Also, if you have the emulator installed this way, and want to play some
+ROMs that are not on the installed image, simply copy those ROMs into the
+save folder "mc0:/PS2GB/" (using LaunchELF or similar). Then you can use
+the ROM browser of InfoGB to start those ROMs from the MC.
+
+---------------------------------------------------------------------------
+Important reminder for saved games:
+
+If you are playing a game that saves to the GB 'battery RAM', make
+sure that you never turn off the PS2 while the game screen is showing.
+
+You need to make sure that the 'battery RAM' of the emulator is also
+transferred to a separate srm file in the save folder 'mc0:/PS2GB/'
+so that the correct saves can be restored the next time you play the
+same game. This is NOT done at the time when you save game as part of
+the gameplay. That only saves to the internal RAM of the emulator.
+
+The only time when such saves are transferred to mc0 is when you break
+off playing by using the submenu command "Back to the main menu". This
+takes you back to the ROM browser where you originally started the game.
+When you see that browser appear on screen, your saves are saved to the
+memory card, so you can then turn off the PS2 without 'losing place' in
+the GB game.
+---------------------------------------------------------------------------
+End of file:    dlanor_rev.txt
+---------------------------------------------------------------------------
