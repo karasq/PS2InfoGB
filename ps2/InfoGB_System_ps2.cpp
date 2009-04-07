@@ -151,7 +151,7 @@ void testdir()
 debut:
 		selection = 0;
 		frame_selection = 0;
-		frame_position=0;
+		frame_position = 0;
  
 		choosedir = 1;  //dlanor: tell menu_main that we want a folder next
 		if ( auto_ROM_flag ) {
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
 			//create ps2gb dir on mc0:
 			if ( fioMkdir("mc0:PS2GB") < 0 ) {
 				printf("Failed to create dir mc0:/PS2GB (folder exists?)");
-				// fixed bug - froze "white screen" when folder PS2GB already exists
+				// KarasQ: fixed bug - froze "white screen" when folder PS2GB already exists
 				// but file gb.brm dosen't in the same time
 				/* SleepThread(); */ 
 			}
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 			fioClose(fd);
    
 		CDVD_Init();
-		FREEMC=initmc();
+		FREEMC = initmc();
 		testdir();
 	}//SleepThread();
 	Load_CNF("mc0:PS2GB/INFOGB.CNF");
@@ -278,7 +278,7 @@ new_ROM_loop:
 		auto_ROM_flag = 0;
 	}
 	else
-		strcpy(rom2,menu_main());  //dlanor: get rom2 = pathname of ROM
+		strcpy(rom2, menu_main());  //dlanor: get rom2 = pathname of ROM
    
 	if(!hostlist){
 		// cdrom / mc / mass loading 
@@ -290,7 +290,20 @@ new_ROM_loop:
 		CDVD_Stop();
 	}
    
-	load_rom(rom2);
+   // KarasQ: display error and return to 
+   // browser if ROM is not loaded successfully
+   switch ( load_rom(rom2) ) {
+      case  0:
+         display_error("Unknown ROM type!", 0);
+         goto new_ROM_loop;
+      case -1:
+         display_error("Unknown ROM size!", 0);
+         goto new_ROM_loop;
+      case -2:
+         display_error("Unknown RAM size!", 0);
+         goto new_ROM_loop;
+   }
+	
 	initialize_memory();
 	initialize_rom();    
 
@@ -317,7 +330,6 @@ new_ROM_loop:
 //---------------------------------------------------------------------------
 int infogb_poll_events()
 {
-
  ps2_update_input(); 
  current_joypad =dwKeyPad1;
  if(endflag){    

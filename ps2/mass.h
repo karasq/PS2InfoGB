@@ -1,6 +1,9 @@
 #ifndef _MASS_H_
 #define _MASS_H_
 
+#include <ctype.h>
+#include <string.h>
+
 #define ARRAY_ENTRIES	220
 
 // File mode flags (for mode in io_stat_t)

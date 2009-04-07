@@ -10,25 +10,24 @@ IRX_DIR = ./irx
 ZLIB = ./lib/testz/zlib
 UNZLIB = ./lib/testz/unzip
 
-EE_CXXFLAGS = -G0 -O2 -I$(NEWLIB)/include -I./gfxpipe -I./ 
-EE_CFLAGS = -G0 -O2 -I$(NEWLIB)/include -I./gfxpipe -I./ 
+EE_CXXFLAGS = -I$(NEWLIB)/include -I./gfxpipe -I./ 
+EE_CFLAGS = -I$(NEWLIB)/include -I./gfxpipe -I./ 
 #EE_CXXFLAGS += -finline-functions -fstrict-aliasing  -funsigned-char  -DLSB_FIRST -fomit-frame-pointer 
 EE_CFLAGS += -finline-functions -fstrict-aliasing  -funsigned-char  -DLSB_FIRST -fomit-frame-pointer 
 
-EE_LIBS += ./lib/libcdvd/lib/libcdvd2.a -lgcc -lm -lc -lmc -lpad  -I. -lc -lstdc++ -lfileXio -lpatches
+EE_LIBS += ./lib/libcdvd/lib/libcdvd2.a -lgcc -lm -lc -lmc -lpad  -I. -lc -lstdc++ -lfileXio -lpatches -lcdvd
 EE_OBJS  = $(ZLIB)/adler32.o $(ZLIB)/compress.o $(ZLIB)/crc32.o $(ZLIB)/gzio.o $(ZLIB)/uncompr.o      \
            $(ZLIB)/infcodes.o $(ZLIB)/trees.o $(ZLIB)/deflate.o $(ZLIB)/inflate.o $(ZLIB)/infblock.o  \
            $(ZLIB)/inftrees.o $(ZLIB)/infutil.o $(ZLIB)/inffast.o $(ZLIB)/zutil.o $(UNZLIB)/explode.o \
-           $(UNZLIB)/unreduce.o $(UNZLIB)/unshrink.o $(UNZLIB)/unzip.o
+           $(UNZLIB)/unreduce.o $(UNZLIB)/unshrink.o $(UNZLIB)/unzip.o ./loader.o ./fakehost.o
 
-EE_OBJS += ./../mem.o ./../cpu.o ./../joypad.o ./../rom.o ./../sound.o ./../vram.o      \
-           ./usbd.o ./usbhdfsd.o ./libcdvd.o ./hw.o ./gs.o ./aio-fio.o ./sjpcm.o        \
-           ./sjpcm_rpc.o ./fontmsx.o ./gfxpipe/gfxpipe.o ./ps2print.o ./ps2input.o      \
-           ./ps2init.o ./ps2gui.o ./ps2romselect.o ./InfoGB_System_ps2.o ./Reboot_ELF.o \
-           ./mass.o 
+EE_OBJS += ./../mem.o ./../cpu.o ./../joypad.o ./../rom.o ./../sound.o ./../vram.o ./../RTC.o  \
+           ./usbd.o ./usbhdfsd.o ./libcdvd.o ./hw.o ./gs.o ./aio-fio.o ./sjpcm.o ./sjpcm_rpc.o \
+           ./fontmsx.o ./gfxpipe/gfxpipe.o ./ps2print.o ./ps2input.o ./ps2init.o ./ps2gui.o    \
+           ./ps2romselect.o ./InfoGB_System_ps2.o ./Reboot_ELF.o ./mass.o ./libtime.o
 
 all: $(EE_BIN)
-	#ee-strip $(EE_BIN)
+	ee-strip $(EE_BIN)
 
 sjpcm.s:
 	bin2s $(IRX_DIR)/sjpcm.irx sjpcm.s sjpcm_irx
@@ -41,6 +40,13 @@ usbd.s:
 
 usbhdfsd.s:
 	bin2s $(IRX_DIR)/usbhdfsd.irx usbhdfsd.s usbhdfsd_irx
+
+loader.s:
+	$(MAKE) -C loader
+	bin2s lib/loader/loader.elf loader.s loader_elf
+
+fakehost.s:
+	bin2s $(PS2SDK)/iop/irx/fakehost.irx fakehost.s fakehost_irx
 
 clean:
 	rm ./libcdvd.s ./sjpcm.s ./usbd.s ./usbhdfsd.s *.o ../*.o ./lib/testz/zlib/*.o ./gfxpipe/*.o

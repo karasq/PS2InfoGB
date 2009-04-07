@@ -196,7 +196,7 @@ int init_machine(void)
       if( SjPCM_Init(1) < 0 )
          printf("SjPCM Bind failed!!");
    }
-
+   
    /* Initialize a pad state */
    // dwKeyPad1 = 0;
    // dwKeyPad2   = 0;

@@ -29,6 +29,8 @@
 #include "vram.h"
 #include "sound.h"
 
+#include "RTC.H"
+
 unsigned char *gameboy_memory[16];	/* 0-F */
 unsigned char *video_ram    = (unsigned char *)NULL;	/* Mapped to 8 & 9 */
 unsigned char *internal_ram = (unsigned char *)NULL;	/* Mapped to B and C */
@@ -40,6 +42,11 @@ unsigned short int obj_palettes[8][4];	/* " */
 unsigned char mbc1_ram_bank_enable = 0;		/* Default is disabled */
 unsigned char mbc1_address_line    = 0;
 unsigned short int mbc5_rom_select = 0;
+
+//KarasQ: for HuC3 only
+int HuC3_RAMFlag = 0;
+int HuC3_RAMValue = 0;
+int HuC3_Reg[8];
 
 char vidram[0x4000];
 char intram[0x8000];
@@ -496,11 +503,45 @@ unsigned char memory_read_byte(unsigned short int address)
 			return gameboy_memory[bank][address & 0x0FFF];
 		case 0x0A:
 		case 0x0B:
-			if (mbc1_ram_bank_enable == 0) {
-				//printf("Ignoring read..\n");
-				return 0;
-			}
-			return gameboy_memory[bank][address & 0x0FFF];
+         switch ( cartridge_type ) {
+            case TYPE_ROM_HUDSON_HUC3:
+               if ( HuC3_RAMFlag > 0x0B && HuC3_RAMFlag < 0x0E) {
+                  if ( HuC3_RAMFlag != 0x0C )
+                     return 1;
+                     
+                  return HuC3_RAMValue;
+               } else {
+                  return gameboy_memory[bank][address & 0x0FFF];
+               }
+               break;
+               
+            case TYPE_ROM_MBC3_TIMER_BATTERY:
+            case TYPE_ROM_MBC3_TIMER_RAM_BATTERY:
+               // KarasQ: fixed read from RAM for RTC
+               if ( mbc1_ram_bank_enable ) {
+                  if ( RTC.RAMBank != -1 ) {
+                     return gameboy_memory[bank][address & 0x0FFF];
+                  }
+                  
+                  switch ( RTC.ClockRegister ) {
+                     case 0x08: return RTC.LSeconds; break;
+                     case 0x09: return RTC.LMinutes; break;
+                     case 0x0a: return RTC.LHours; break;
+                     case 0x0b: return RTC.LDays; break;
+                     case 0x0c: return RTC.LControl;
+                  }
+               }
+               break;
+            case TYPE_ROM_MBC3_RAM:
+            case TYPE_ROM_MBC3_RAM_BATTERY:
+            default:
+               if ( mbc1_ram_bank_enable == 0 ) {
+                  //printf("Ignoring read..\n");
+                  return 0;
+               } 
+               return gameboy_memory[bank][address & 0x0FFF]; 
+         }
+         return 0;
 		case 0x0C:
 		case 0x0D:
 			return gameboy_memory[bank][address & 0x0FFF];
@@ -590,7 +631,7 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 						rom_select_bank(value & 0x0F, 4);
 				} 
 			} else if(cartridge_type >= TYPE_ROM_MBC3 && cartridge_type <= TYPE_ROM_MBC3_TIMER_RAM_BATTERY ) { // KarasQ: UPDATED new cartridge type
-				// KarasQ: fixed MBC3
+				// KarasQ: fixed MBC3 - battery-backup and implemeted RTC
 				switch ( address & 0x6000 ) {
                case 0x0000: // RAM enable register
                	if (value == 0x0A) {
@@ -603,17 +644,35 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                   rom_select_bank(value & 0x7F, 4);
                   break;
                case 0x4000: // RAM bank select
-                  rom_select_ram_bank(value & 0x03);
+                  if ( value < 8 ) {
+                     if ( value == RTC.RAMBank )
+                        break;
+                     RTC.RAMBank = value;
+                     rom_select_ram_bank(value & 0x03);
+                  } else {
+                     if ( mbc1_ram_bank_enable ) {
+                        RTC.RAMBank = -1;
+                        RTC.ClockRegister = value;
+                     }
+                  }
                   break;
                case 0x6000: // Clock latch
+                  //printf("clock: %i\n", RTC.LastTime);
+                  if ( RTC.ClockLatch == 0 && value == 1 ) {
+                     UpdateClockData(&RTC);
+                     
+                     RTC.LSeconds = RTC.Seconds;
+                     RTC.LMinutes = RTC.Minutes;
+                     RTC.LHours   = RTC.Hours;
+                     RTC.LDays    = RTC.Days;
+                     RTC.LControl = RTC.Control;
+                  }
+                  
+                  if ( value == 0x00 || value == 0x01 )
+                     RTC.ClockLatch = value;
+                  //printf("Crt:%i/%i %i %i:%i:%i\n", RTC.Control, RTC.LControl, RTC.Days, RTC.Hours, RTC.Minutes, RTC.Seconds);
                   break;
             }
-            /* KarasQ: battery-backup don't work here
-            if(address >= 0x2000 && address <= 0x3FFF) {
-					rom_select_bank(value & 0x7F, 4);
-				} else if(address >= 0x4000 && address <= 0x5FFF) {
-					rom_select_ram_bank(value & 0x3);
-				}*/
 			} else if(cartridge_type >= TYPE_ROM_MBC5 && cartridge_type <= TYPE_ROM_MBC5_RAM_BATTERY) {
             if(address < 0x2000) {
 					#if 0
@@ -636,7 +695,23 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 				} else if(address < 0x6000) {
 					rom_select_ram_bank(value & 0x0F);	/* gets a total of 15 banks */
 				}
-			}
+				// KarasQ: Hundson HuC3 support
+			} else if ( cartridge_type == TYPE_ROM_HUDSON_HUC3 ) {
+            switch ( address & 0x6000 ) {
+               case 0x0000: // RAM enable register
+						mbc1_ram_bank_enable = (value == 0x0A ? 1 : 0);
+                  HuC3_RAMFlag = value;
+                  break;
+               case 0x2000: // ROM bank select
+                  rom_select_bank(value & 0x7F, 4);
+                  break;
+               case 0x4000: // RAM bank select
+                  rom_select_ram_bank(value & 0x03);
+                  break;
+               case 0x6000: // nothing to do!
+                  break;
+            }
+         }
 			return;
 		case 0x08:
 		case 0x09:
@@ -644,12 +719,106 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 			return;
 		case 0x0A:
 		case 0x0B:
-			if ( (mbc1_ram_bank_enable == 0) || !gameboy_memory[bank] ) {
-				//printf("Ignoring write..\n");
-				return;
-			}
-			gameboy_memory[bank][address & 0x0FFF] = value;
-			return;
+			switch ( cartridge_type ) {
+            case TYPE_ROM_HUDSON_HUC3:
+               int *p;
+               
+               if ( HuC3_RAMFlag < 0x0B || HuC3_RAMFlag > 0x0E ) {
+                  if ( mbc1_ram_bank_enable ) {
+                     gameboy_memory[bank][address & 0x0FFF] = value;
+                  }
+               } else {
+                  if ( HuC3_RAMFlag == 0x0B ) {
+                     if ( value == 0x62 ) {
+                        HuC3_RAMValue = 1;
+                     } else {
+                        switch ( value & 0xf0 ) {
+                           case 0x10:
+                              p = &HuC3_Reg[1];
+                              HuC3_RAMValue = *(p + HuC3_Reg[0]++);
+                              
+                              if ( HuC3_Reg[0] > 6 )
+                                 HuC3_Reg[0] = 0;
+                                 
+                              break;
+                           case 0x30:
+                              p = &HuC3_Reg[1];
+                              *(p + HuC3_Reg[0]++) = value & 0x0f;
+                              
+                              if ( HuC3_Reg[0] > 6 )
+                                 HuC3_Reg[0] = 0;
+                                 
+                              /* FIXME: is that need?
+                                 gbDataHuC3.mapperAddress =
+                                 (gbDataHuC3.mapperRegister6 << 24) |
+                                 (gbDataHuC3.mapperRegister5 << 16) |
+                                 (gbDataHuC3.mapperRegister4 <<  8) |
+                                 (gbDataHuC3.mapperRegister3 <<  4) |
+                                 (gbDataHuC3.mapperRegister2);
+                              */
+                              break;
+                           case 0x40:
+                              HuC3_Reg[0] = (HuC3_Reg[0] & 0xF0) | (value & 0x0F);
+                              
+                           /* FIXME: is that need?
+                              HuC3_Reg[1] = (gbDataHuC3.mapperAddress & 0x0f);
+                              HuC3_Reg[2] = ((gbDataHuC3.mapperAddress>>4)&0x0f);
+                              HuC3_Reg[3] = ((gbDataHuC3.mapperAddress>>8)&0x0f);
+                              HuC3_Reg[4] = ((gbDataHuC3.mapperAddress>>16)&0x0f);
+                              HuC3_Reg[5] = ((gbDataHuC3.mapperAddress>>24)&0x0f);
+                           */
+                           
+                              HuC3_Reg[6] = 0;
+                              HuC3_Reg[7] = 0;
+                              HuC3_RAMValue = 0;
+                              break;
+                           case 0x50:
+                              HuC3_Reg[0] = (HuC3_Reg[0] & 0x0f) | ( (value << 4) & 0x0f );
+                              break;
+                           default:
+                              HuC3_RAMValue = 1;
+                              break;
+                        }
+                     }
+                  }
+               }
+               break; // end case HuC3
+               
+            case TYPE_ROM_MBC3_TIMER_BATTERY:
+            case TYPE_ROM_MBC3_TIMER_RAM_BATTERY:
+               // KarasQ: fixed write to RAM for RTC
+               if ( mbc1_ram_bank_enable ) {
+                  if ( RTC.RAMBank != -1 ) {
+                     gameboy_memory[bank][address & 0x0FFF] = value;
+                  } else {
+                     RTC.LastTime = timer.getTime();
+                     switch ( RTC.ClockRegister ) {
+                        case 0x08: RTC.Seconds = value; break;
+                        case 0x09: RTC.Minutes = value; break;
+                        case 0x0a: RTC.Hours = value; break;
+                        case 0x0b: RTC.Days = value; break;
+                        case 0x0c:
+                           if ( RTC.Control & 0x80 ) {
+                              //printf("%i - %i\n", RTC.Control, value);
+                              RTC.Control = 0x80 | value;
+                           } else {
+                              RTC.Control = value;
+                           }
+                        break;
+                     }
+                  }
+               }
+               break;
+            case TYPE_ROM_MBC3_RAM:
+            case TYPE_ROM_MBC3_RAM_BATTERY:
+            default:
+               if ( (mbc1_ram_bank_enable == 0) || !gameboy_memory[bank] ) {
+                  //printf("Ignoring write..\n");
+                  return;
+               }
+               gameboy_memory[bank][address & 0x0FFF] = value; 
+         }
+         return;
 		case 0x0C:
 		case 0x0D:
 			gameboy_memory[bank][address & 0xFFF] = value;

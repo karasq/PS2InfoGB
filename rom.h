@@ -34,10 +34,12 @@ typedef enum _carttype { TYPE_Unknown = 0,
                          TYPE_ROM_MBC3,
                          TYPE_ROM_MBC3_RAM,
                          TYPE_ROM_MBC3_RAM_BATTERY,
-                         TYPE_ROM_MBC3_TIMER_RAM_BATTERY,   // UPDATED: New cartridge type by KarasQ
+                         TYPE_ROM_MBC3_TIMER_BATTERY,     // KarasQ: New cartridge type
+                         TYPE_ROM_MBC3_TIMER_RAM_BATTERY, // KarasQ: New cartridge type
                          TYPE_ROM_MBC5,
                          TYPE_ROM_MBC5_RAM,
-                         TYPE_ROM_MBC5_RAM_BATTERY
+                         TYPE_ROM_MBC5_RAM_BATTERY,
+                         TYPE_ROM_HUDSON_HUC3             // KarasQ: New cartridge type
                          } carttype;
 typedef enum _mbc1type { MBC1_Unused  = 0, MBC1_16M_8K, MBC1_4M_32K } mbc1type;
 typedef enum _ramsize  { RAM_SIZE_2KB = 1, RAM_SIZE_8KB, RAM_SIZE_32KB, RAM_SIZE_128KB = 6 } ramsize;

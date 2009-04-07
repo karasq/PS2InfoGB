@@ -1,21 +1,26 @@
 --------------------------- InfoGB Note ---------------------------
 
-This is PS2InfoGB rev. 5b continued by KarasQ. It's based on dlanor's 
+This is PS2InfoGB rev. 5c continued by KarasQ. It's based on dlanor's 
 source of PS2InfoGB rev. 4
 
 PS2 port of InfoGB 0.5J by '7not6'
 
-Revision Date: 2009.03.25
+Revision Date: 2009.04.07
 
 ------------------------- Changes history -------------------------
 
 ==== InfoGB continued by KarasQ ====
-=> Rev.5b
+=> Rev.5c
      - Fixed bug: program stop on white-screen when folder PS2GB already
        exists, but the file gb.brm dosen't exist in the same time (hopefully)
-     - Added: USB Mass Sorage Support
-     - Added: ability to run cardridge type ROM+MBC3+TIMER+RAM+BATTERY (read important details bellow!)
-     - Improved: MBC3 controller (should resolve problem with battery-backed save game)
+     - Improved: MBC3 controller - should resolve problem with battery-backed save game
+     - Added: USB Mass Storage Support
+     - Added: Real Time Clock support for MBC3 controller
+     - Added: ability to back to browser when ROM can't be loaded
+     - Added: ability to run cardridge type:
+        * 'ROM+MBC3+TIMER+RAM+BATTERY'
+        * 'ROM+MBC3+TIMER+BATTERY'
+        * 'Hudson-HuC3'
 
 ==== InfoGB by dlanor ====
 => Rev.4
@@ -27,7 +32,7 @@ Revision Date: 2009.03.25
      - Fixed a bug that caused overly long ROM listings to be trashed
 
 => Rev.3
-     - Added auto_ROM CNF variable, to start a ROM automagically
+     - Added auto_ROM CNF variable, to start a ROM automatically
      - Restructured the release package to include full source code
 
 => Rev.2
@@ -44,19 +49,22 @@ Revision Date: 2009.03.25
    [*] Cardridge type 'ROM+MBC3+TIMER+RAM+BATTERY' note
 
                                 -----------------
-This type of cartridge uses for example Pokemon (Silver, Gold, Crystal),
-so it means that since this release should run these games (and other
-games with this type of ROM)
+This type of cartridge uses for example Pokemon (Silver, Gold, Crystal), so it means that 
+since this revision should run these games (and other games with this type of ROM)
 
-BUT! InfoGB 0.5J is not developed enough. Since PS2InfoGB rev 5b problem with
-battery-backed save game is resolved (hopefully), but there is still one important
-thing which need to be implement:
+Since PS2InfoGB rev 5b problem with battery-backed save game is resolved for MBC3 (hopefully) 
+and sicne PS2InfoGB rev 5c Real Time Clokc (RTC) is implemented and It seems to work well.
+Please message me if something works not properly.
+                               -----------------
 
-  - There is no Real Time Clock (RTC) support, so for example in Pokemon 
-    Silver, when you set time to '10:00 AM Monday' at the beginning, this time 
-    will be constant (not self changable during the game, I mean).
+   [*] Cardridge type 'Hudson-HuC3' note
 
-I will try to implement it and will see what can I do with that thing.
+                                -----------------
+This type of cartridge uses for example Robopon - Sun Version, so it means that 
+since this revision should run this game (and other games with this type of ROM)
+
+I have tested only this ROM and It seems to work fine. Please message me if
+something works not properly.
                                 -----------------
 
    [*] USB MASS Support
@@ -64,11 +72,11 @@ I will try to implement it and will see what can I do with that thing.
 That was my major goal for this release. This PS2InfoGB uses USBHDFSD.IRX rev. 1534
 and USBD.IRX rev. 1494 modules (source code from http://svn.ps2dev.org/)
 
-Here are some rule to use proper this feature:
+Here are some rules to use proper this feature:
 
  1. ROM(s) have to be placed in dir(s). 
- 2. Each dir need to be placed in main root of USB mass storage. 
-    (The same rule as for the memory card)
+ 2. Each dir have to be placed in main root of USB mass storage. 
+    (The same rules as for the memory card)
 
     It's all because the base code is projected this way and I don't have
     as much time to rewrite it now, but it's still well enough to run your ROMs
@@ -90,7 +98,7 @@ Here are some rule to use proper this feature:
 USB Mass Support also extended ability added by dlanor in rev. 2 (I mean about
 to exit from emu to user defined console manager). Now it's possible to run
 your ELF file from USB mass storage. You have to edit your INFOGB.CNF placed
-on mc0:/PS2GB/ and change line:
+on mc0:/PS2GB/, change line:
 
     "boot_ELF = mc0:/BOOT/BOOT.ELF"
      to
@@ -109,7 +117,7 @@ I don't guarantee correctly work!
 - I changed option "Step State Index" to "Gameboy Reset". It's probably
   not usefull ;) I just tested something and then I just left it.
 
-- The lase one important notes. I just copied it from dlanor's info release
+- The last one important note. I just copied it from dlanor's info release
   and pasted it here:
 
  "Important reminder for saved games:
@@ -134,8 +142,3 @@ I don't guarantee correctly work!
  file.
                                 -----------------
 --------------------------------------------------------------------
-
-
-
-
-

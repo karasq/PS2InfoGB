@@ -247,7 +247,7 @@ void display_intro(char* errmsg, int fatal)
       gp_gouradrect(&thegp, (31+32-20)<<4, 70<<4,GS_SET_RGBA(0x00, 0x00, 0x40, 128), (20+32+255-31)<<4, (142+64)<<4,  GS_SET_RGBA(0x40,0x40, 0x80, 64), 3);
       
       textCpixel(0, 320, 80, GS_SET_RGBA(255, 255, 255, 255), 0, 0, 4, errmsg);
-      textCpixel(0, 320, 80+18+8/*+18*/, GS_SET_RGBA(255, 255, 255, 255), 0,0,4, "InfoGB by 'dlanor' & 'KarasQ' rev.5b");
+      textCpixel(0, 320, 80+18+8/*+18*/, GS_SET_RGBA(255, 255, 255, 255), 0,0,4, "InfoGB by 'dlanor' & 'KarasQ' rev.5c");
       textCpixel(0, 320, 80+36+18, GS_SET_RGBA(255, 255, 255, 255),0,0,4, "based on InfoGB by Jay'Factory");
       textCpixel(0, 320, 80+72, GS_SET_RGBA(255, 255, 255, 255),0,0,4, " USB MASS SUPPORT Version");
       

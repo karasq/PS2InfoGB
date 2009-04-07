@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <libpad.h>
 #include <libmc.h>
-#include "lib/libcdvd/common/cdvd.h"
+#include "lib/libcdvd/ee/cdvd_rpc.h" // common/cdvd.h"
 
 #include "hw.h"
 #include "gs.h"
@@ -77,8 +77,10 @@ char scroll_text[] = "                                                          
 
 extern void textCpixel(int ,int ,int ,unsigned ,int ,int ,int ,char *,...);
 
-extern int whichdrawbuf ;
-extern int dispx, dispy;	
+extern int whichdrawbuf;
+extern int dispx, dispy;
+
+extern void display_intro(char* errmsg, int fatal);
 
 //---------------------------------------------------------------------------
 int loadromcfg()
