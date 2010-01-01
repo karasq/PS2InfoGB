@@ -21,7 +21,6 @@
  */
 
 #include "system.h"
-
 #include "joypad.h"
 
 unsigned char current_joypad = 0x00;

@@ -1,15 +1,29 @@
---------------------------- InfoGB Note ---------------------------
+--------------------------- PS2InfoGB Note ---------------------------
 
-This is PS2InfoGB rev. 5c continued by KarasQ. It's based on dlanor's 
+This is PS2InfoGB rev. 6a continued by KarasQ. It's based on dlanor's 
 source of PS2InfoGB rev. 4
 
 PS2 port of InfoGB 0.5J by '7not6'
 
-Revision Date: 2009.04.07
+Revision Date: 2010.01.01
 
 ------------------------- Changes history -------------------------
 
 ==== InfoGB continued by KarasQ ====
+=> Rev.6a 
+     - Added: Access to mc1:/ device
+     - Added: Support for sub-directories
+     - Added: Sorting list (separately for folders and files)
+     - Added: Possibility to change buttons configuration
+     - Added: New In-browser menu with options (push start in browser)
+     - Added: Load and Save Game State (beta)
+     - Improved: CPU core (minor changes)
+     - Improved: Real Time Clock
+     - Improved: Preselected ROM option
+     - Changed: GUI - the way of selecting devices, some warning boxes etc.
+     - Removed: File gb.brm (what that file was for?)
+     And a lot of changes invisible for users
+
 => Rev.5c
      - Fixed bug: program stop on white-screen when folder PS2GB already
        exists, but the file gb.brm dosen't exist in the same time (hopefully)
@@ -46,81 +60,139 @@ Revision Date: 2009.04.07
 --------------------- Changes Notes and others ---------------------
                           important notes!
 
-   [*] Cardridge type 'ROM+MBC3+TIMER+RAM+BATTERY' note
-
-                                -----------------
-This type of cartridge uses for example Pokemon (Silver, Gold, Crystal), so it means that 
-since this revision should run these games (and other games with this type of ROM)
-
-Since PS2InfoGB rev 5b problem with battery-backed save game is resolved for MBC3 (hopefully) 
-and sicne PS2InfoGB rev 5c Real Time Clokc (RTC) is implemented and It seems to work well.
-Please message me if something works not properly.
-                               -----------------
-
-   [*] Cardridge type 'Hudson-HuC3' note
-
-                                -----------------
-This type of cartridge uses for example Robopon - Sun Version, so it means that 
-since this revision should run this game (and other games with this type of ROM)
-
-I have tested only this ROM and It seems to work fine. Please message me if
-something works not properly.
-                                -----------------
-
    [*] USB MASS Support
                                 -----------------
-That was my major goal for this release. This PS2InfoGB uses USBHDFSD.IRX rev. 1534
-and USBD.IRX rev. 1494 modules (source code from http://svn.ps2dev.org/)
+ That was my major goal for my release. This PS2InfoGB uses USBHDFSD.IRX rev. 1534
+ and USBD.IRX rev. 1494 modules (source code from http://svn.ps2dev.org/)
 
-Here are some rules to use proper this feature:
-
- 1. ROM(s) have to be placed in dir(s). 
- 2. Each dir have to be placed in main root of USB mass storage. 
-    (The same rules as for the memory card)
-
-    It's all because the base code is projected this way and I don't have
-    as much time to rewrite it now, but it's still well enough to run your ROMs
-    from USB mass storage and other devices
-
-    example:
-      FILE: rom1.gbc, rom2.zip, rom3.gb
-      You have to create folder in your mass storage device (eg. roms)
-      Now you have to copy all of your ROMs to this folder.
-
-      You can also make dirs "roms1" and "roms2" in main root of device
-      and past to one of them rom1.gbc and to another rest of your ROMs.
-      
-    If you past your ROM(s) to main root of your mass device than these
-    ROMs will be overlooked!
-
- 3. Names of each ROM shouldn't be longer than 35 characters with extension
-
-USB Mass Support also extended ability added by dlanor in rev. 2 (I mean about
-to exit from emu to user defined console manager). Now it's possible to run
-your ELF file from USB mass storage. You have to edit your INFOGB.CNF placed
-on mc0:/PS2GB/, change line:
+ USB Mass Support also extended ability added by dlanor in rev. 2 (I mean about
+ to exit from emu to user defined console manager). Now it's possible to run
+ your ELF file from USB mass storage. You can edit your INFOGB.CNF placed
+ on mc0:/PS2GB/. All you have to do is just change line:
 
     "boot_ELF = mc0:/BOOT/BOOT.ELF"
      to
-    "boot_ELF = mass:PATH/YOUR_FILE.ELF"
+    "boot_ELF = mass:/PATH/YOUR_FILE.ELF"
 
-and save changes.
+ and save changes.
 
-There is possibility that your USB device can be not recognised by PS2InfoGB!
-I don't guarantee correctly work!
+ There is possibility that your USB device can be not recognized by PS2InfoGB!
+ I don't guarantee correctly work!
+
+   [*] Real Time Clock
+ 
+ In revision 5c I've made mistake. Now it's fixed, but SOME SAVE GAMES, WHICH USE REAL 
+ TIME CLOCK (ROM type ROM+MBC3+TIMER+RAM+BATT and ROM+MBC3+TIMER+BATT) MIGHT BE
+ NOT COMPATIBLE WITH THIS REVISION (IT'S ACTUALLY RANDOM). THE ONLY WAY TO FULLY FIX
+ IT YOU HAVE TO REMOVE OLD SAVE AND START GAME AGAIN.
+
+ Well, probably you will be able to continue game but without real time clock.
+ Sometimes games offer to set real time clock (e.g. Pokemon Crystal), but you will
+ set it every time you load battery backed save.
+
+ But as I said, it's random, so it doesn't always happen.
+
+   [*] New In-browser menu with options
+
+ You can enter this menu only from browser by press start button. You can change here:
+   - Current Save Device - This is device where saves (*.srm and *.sav) will be stored. 
+     You can change it from default MC0 device to MC1 or MASS. "PS2GB" folder will be
+     created automatically on this device (if not exists yet). If device will be not
+     available on the next reboot than current save divice will be set to default
+     MC0 debvice, PS2InfoGB will let you know about that fact.
+
+     Notice that saves are not copied from one device to another, so when you change
+     save device, than saves from previouse device will be not available (if you don't
+     copy them yourself).
+
+     Also remember that config file is always save to MC0 so if you run program without
+     memorycard in MC0 than default config will be loaded and Current Save Device will be 
+     set to default (MC0) device.
+
+   - Preselected ROM - in In-browser menu you can only turn off preselected ROM. The option
+     will be set to "Turn off" if any ROM is currently preselected. When you choose this
+     option than it will switch to "Not defined", which means that preselected ROM is
+     canceled.
+     
+     More details below in paragraph "Preselecting ROM".
+
+   - Screen Adjustment - by selecting this option you can adjust screen X, Y offsets.
+     You can move screen by pressing DPAD (arrows) buttons. When you done just press
+     X button.
+   
+   - Buttons configuration - see paragraph "Possibility to change buttons configuration"
+   
+   - Turbo buttons - On/Off turbo buttons
+   
+   - Boot ELF - saves current config and run ELF follow ELF Path.
+
+   [*] Preselecting ROM
+
+ This option dlanor has added in Rev.3. Since this revision preselecting ROM is easier 
+ to use. You don't have to edit your config every time you would like to preselect a new 
+ ROM. All you have to do is choose the option called "Preselect this ROM" (In-game menu).
+
+ When you choose it the name of this option should change to "This ROM is preselected". 
+ It means, since now every time you reboot PS2InfoGB, message box will appear and if you 
+ agree then preselected ROM will be loaded, if not than you will return to browser.
+
+ You can turn off this option anytime you want. Just open In-browser menu (push start in 
+ browser) and turn it off.
+
+ DON'T FORGET TO SAVE YOUR CONFIG (Save CNF) EVERY TIME YOU CHANGE YOUR PESELECTED ROM OR
+ ANYTHING ELSE (IN-GAME MENU) OTHERWISE THE CHANGE WILL NOT AFFECT ON THE NEXT REBOOT. 
+ THE ONLY EXCEPTION IS IN-BROWSER MENU, EVERY TIME WHEN YOU LEAVE IT, CONFIG FILE WILL BE 
+ SAVED
+
+   [*] Possibility to change button configuration
+ 
+ Now you can freely change your button configuration. Enter In-browser menu and find option
+ called "Button configure". You will be asked for pressing buttons. If option "Turbo Buttons" 
+ is "On" you will be asked for 4 more buttons.
+
+ Every single gameboy or turbo button can be assign only to one PS2 PAD button, cause you 
+ can't assign e.g. A and B button to X at the same time, so chosen button will be blocked 
+ to avoid this situation.
+
+ DPAD (ARROWS) buttons are not changeable and you can't assign any gameboy or turbo button 
+ to DPAD buttons.
+
+ Configuration is saved to file BUTTONS.DAT (located in mc0:/PS2GB/) This file is not 
+ readable for human being so don't try to open it)
+
+   [*] Save and Load Game State
+
+ "Save State to [device]" and "Load State of [device]" options are finally implemented.
+ But! It has been tested with three ROMs so I'm not really sure how it will work with
+ other ROMs.
+ 
+ This method take about 50kB per game state on memory card (so it's pretty much, sorry
+ for that, but this emu is not adapted for such things, but maybe I will add zip compression
+ in future revision)
+
+ The location of save state and battery backed save depends on which current device is set.
+ Basically it's [device]:/PS2GB/. You can change "Current Save Device" in In-browser menu
+ to MC0, MC1 and MASS.
+
+   [*] Sorting List
+
+ Since this release list with ROM entries and directories will be sorted. There is
+ implemented algorithm QuickSort. First are listing folders following by this pattern 
+ 0-9A-Za-z, then files in the same way.
 
    [*] Other notes
 
-- "Save State to mc0:" and "Load State of mc0:" options still don't work
-  it's just not implemented yet.
+- Please be careful with names of your ROM files and folders. They will be not longer
+ than 32 characters. If you use longer file name, it may cause some problems
+ like missing save game and other failures, so since this release emulator will not
+ run kind of files anymore - it will let you know by show you the warning message box  
 
-- I changed option "Step State Index" to "Gameboy Reset". It's probably
-  not usefull ;) I just tested something and then I just left it.
+- In one folder you can put up to 256 files and up to 128 folders. Don't magnify
+ with folder depth either!
 
-- The last one important note. I just copied it from dlanor's info release
-  and pasted it here:
+- You can remove file from mc0:/PS2GB/gb.brm cause it's not need anymore
 
- "Important reminder for saved games:
+- "Important reminder for saved games:
  
  If you are playing a game that saves to the GB 'battery RAM', make
  sure that you never turn off the PS2 while the game screen is showing.
@@ -140,5 +212,6 @@ I don't guarantee correctly work!
 
  For more info about previous changes please read dlanor's release note
  file.
+
                                 -----------------
 --------------------------------------------------------------------

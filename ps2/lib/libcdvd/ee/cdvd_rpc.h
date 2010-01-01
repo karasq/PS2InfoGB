@@ -15,7 +15,10 @@ int CDVD_FindFile(const char* fname, struct TocEntry* tocEntry);
 void CDVD_Stop();
 int CDVD_TrayReq(int mode);
 int CDVD_DiskReady(int mode);
-int CDVD_getdir(const char* pathname, const char* extensions, enum CDVD_getMode getMode, struct TocEntry tocEntry[], unsigned int req_entries, char* new_pathname);
+int CDVD_GetDir(const char* pathname, const char* extensions, enum CDVD_getMode getMode, struct TocEntry tocEntry[], unsigned int req_entries, char* new_pathname);
+void CDVD_FlushCache();
+unsigned int CDVD_GetSize();
+
 
 #ifdef __cplusplus
 }

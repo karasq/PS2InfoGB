@@ -24,6 +24,7 @@
 #include "rom.h"
 #include "mem.h"
 #include "regs.h"
+#include "data.h"
 #include "joypad.h"
 #include "cpu.h"
 #include "vram.h"
@@ -43,10 +44,10 @@ unsigned char mbc1_ram_bank_enable = 0;		/* Default is disabled */
 unsigned char mbc1_address_line    = 0;
 unsigned short int mbc5_rom_select = 0;
 
-//KarasQ: for HuC3 only
+// for HuC3 only
 int HuC3_RAMFlag = 0;
 int HuC3_RAMValue = 0;
-int HuC3_Reg[8];
+int HuC3_Reg[2];
 
 char vidram[0x4000];
 char intram[0x8000];
@@ -121,10 +122,9 @@ int initialize_memory()
 
 	install_memory(0x0F, bank_sixteen);
 	
-	sprite_oam    = &gameboy_memory[0xF][0xE00];
+	sprite_oam = &gameboy_memory[0xF][0xE00];
 
 	reset_colors();
-//	printf("cool");
 	return 1;
 }
 
@@ -197,7 +197,8 @@ void free_memory()
 			return SoundRead(reg);
 		case 0x26:
 			if (!SoundEnabled) {
-				SNDREG52 ^= 0x0F;
+				//SNDREG52 ^= 0x0F;
+				SNDREG52 = 0x00;
 				return SNDREG52;
 			}
 			return SoundRead(reg);
@@ -319,7 +320,7 @@ void free_memory()
 		case 0x3D:
 		case 0x3E:
 		case 0x3F:
-			if (SoundEnabled)
+			if (SoundEnabled && (SNDREG52 & 0x80))
 				SoundWrite((unsigned char)reg, (unsigned char)value);
 			else
 				hiram[reg | 0xF00] = value;
@@ -331,10 +332,11 @@ void free_memory()
 			extern unsigned char *WindowTable;
 
 			if (value & 0x08) {
-				BkgTable = &video_ram[0x1C00];//printf("passage %x ",video_ram[0x1C00]);
+				BkgTable = &video_ram[0x1C00]; //printf("passage %x ",video_ram[0x1C00]);
 			} else {
-				BkgTable = &video_ram[0x1800];//printf("passage %x ",video_ram[0x1800]);
+				BkgTable = &video_ram[0x1800]; //printf("passage %x ",video_ram[0x1800]);
 			}
+			
 			if (value & 0x10) {
 				TileSign = 0;
 				BkgTiles = &video_ram[0];
@@ -657,7 +659,6 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                   }
                   break;
                case 0x6000: // Clock latch
-                  //printf("clock: %i\n", RTC.LastTime);
                   if ( RTC.ClockLatch == 0 && value == 1 ) {
                      UpdateClockData(&RTC);
                      
@@ -670,7 +671,6 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                   
                   if ( value == 0x00 || value == 0x01 )
                      RTC.ClockLatch = value;
-                  //printf("Crt:%i/%i %i %i:%i:%i\n", RTC.Control, RTC.LControl, RTC.Days, RTC.Hours, RTC.Minutes, RTC.Seconds);
                   break;
             }
 			} else if(cartridge_type >= TYPE_ROM_MBC5 && cartridge_type <= TYPE_ROM_MBC5_RAM_BATTERY) {
@@ -695,7 +695,6 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 				} else if(address < 0x6000) {
 					rom_select_ram_bank(value & 0x0F);	/* gets a total of 15 banks */
 				}
-				// KarasQ: Hundson HuC3 support
 			} else if ( cartridge_type == TYPE_ROM_HUDSON_HUC3 ) {
             switch ( address & 0x6000 ) {
                case 0x0000: // RAM enable register
@@ -759,18 +758,16 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                               break;
                            case 0x40:
                               HuC3_Reg[0] = (HuC3_Reg[0] & 0xF0) | (value & 0x0F);
-                              
+                              HuC3_RAMValue = 0;
                            /* FIXME: is that need?
                               HuC3_Reg[1] = (gbDataHuC3.mapperAddress & 0x0f);
                               HuC3_Reg[2] = ((gbDataHuC3.mapperAddress>>4)&0x0f);
                               HuC3_Reg[3] = ((gbDataHuC3.mapperAddress>>8)&0x0f);
                               HuC3_Reg[4] = ((gbDataHuC3.mapperAddress>>16)&0x0f);
                               HuC3_Reg[5] = ((gbDataHuC3.mapperAddress>>24)&0x0f);
-                           */
-                           
                               HuC3_Reg[6] = 0;
                               HuC3_Reg[7] = 0;
-                              HuC3_RAMValue = 0;
+                           */
                               break;
                            case 0x50:
                               HuC3_Reg[0] = (HuC3_Reg[0] & 0x0f) | ( (value << 4) & 0x0f );
@@ -791,7 +788,7 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                   if ( RTC.RAMBank != -1 ) {
                      gameboy_memory[bank][address & 0x0FFF] = value;
                   } else {
-                     RTC.LastTime = timer.getTime();
+                     RTC.LastTime = timer.getTime(0);
                      switch ( RTC.ClockRegister ) {
                         case 0x08: RTC.Seconds = value; break;
                         case 0x09: RTC.Minutes = value; break;
@@ -799,7 +796,6 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                         case 0x0b: RTC.Days = value; break;
                         case 0x0c:
                            if ( RTC.Control & 0x80 ) {
-                              //printf("%i - %i\n", RTC.Control, value);
                               RTC.Control = 0x80 | value;
                            } else {
                               RTC.Control = value;

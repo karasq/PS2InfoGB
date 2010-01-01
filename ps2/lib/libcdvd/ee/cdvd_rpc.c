@@ -70,7 +70,7 @@ int CDVD_TrayReq(int mode)
 	return sbuff[0];
 }
 
-int CDVD_getdir(const char* pathname, const char* extensions, enum CDVD_getMode getMode, struct TocEntry tocEntry[], unsigned int req_entries, char* new_pathname)
+int CDVD_GetDir(const char* pathname, const char* extensions, enum CDVD_getMode getMode, struct TocEntry tocEntry[], unsigned int req_entries, char* new_pathname)
 {
 	unsigned int num_entries;
 
@@ -107,4 +107,22 @@ int CDVD_getdir(const char* pathname, const char* extensions, enum CDVD_getMode 
 		strncpy(new_pathname,(char*)&sbuff[1],1023);
 
 	return (num_entries);
+}
+
+void CDVD_FlushCache()
+{
+	if(!cdvd_inited) return;
+
+	SifCallRpc(&cd0,CDVD_FLUSHCACHE,0,(void*)(&sbuff[0]),0,(void*)(&sbuff[0]),0,0,0);
+
+	return;
+}
+
+unsigned int CDVD_GetSize()
+{
+	if(!cdvd_inited) return;
+
+	SifCallRpc(&cd0,CDVD_GETSIZE,0,(void*)(&sbuff[0]),0,(void*)(&sbuff[0]),4,0,0);
+
+	return sbuff[0];
 }

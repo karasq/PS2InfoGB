@@ -1,7 +1,12 @@
-#include "RTC.h"
+// RTC for InfoGB
+// Author: Krystian 'KarasQ' Karas
+// Contact: k4rasq@gmail.com
 
-// global timer
-ps2time timer;
+#include "RTC.h"
+#include "PS2Time.h"
+
+// global PS2 timer
+PS2Time timer;
 
 // RTC data
 RTC_Data RTC = {
@@ -22,7 +27,7 @@ RTC_Data RTC = {
 };
 
 void UpdateClockData(RTC_Data* RTC) {
-  int now = timer.getTime();
+  int now = timer.getTime(0);
   int diff = now - RTC->LastTime;
   
   if ( diff > 0 ) {
@@ -36,7 +41,7 @@ void UpdateClockData(RTC_Data* RTC) {
     diff /= 60;
 
     RTC->Minutes += diff % 60;
-    if ( RTC->Minutes > 60 ) {
+    if ( RTC->Minutes >= 60 ) {
       RTC->Minutes -= 60;
       RTC->Hours++;
     }

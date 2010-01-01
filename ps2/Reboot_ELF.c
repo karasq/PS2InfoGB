@@ -52,8 +52,6 @@ typedef struct
 	u32	flags;
 	u32	align;
 } elf_pheader_t;
-
-
 //--------------------------------------------------------------
 //End of data declarations
 //--------------------------------------------------------------
@@ -73,8 +71,12 @@ void RunLoaderElf(char *filename, char *party)
 
 	if((!strncmp(party, "hdd0:", 5)) && (!strncmp(filename, "pfs0:", 5))){
 		char fakepath[128], *p;
-		if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY))
-			return;
+		if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY)) {
+		  //Some error occurred, it could be due to something else having used pfs0
+			//unmountParty(0);  //So we try unmounting pfs0, to try again
+			if(fileXioMount("pfs0:", party, FIO_MT_RDONLY) < 0)
+			   return;  //If it still fails, we have to give up...
+      }
 		strcpy(fakepath,filename);
 		p=strrchr(fakepath,'/');
 		if(p==NULL) strcpy(fakepath,"pfs0:");
@@ -121,7 +123,7 @@ void RunLoaderElf(char *filename, char *party)
 
 	argv[0] = filename;
 	argv[1] = party;
-	
+
 	ExecPS2((void *)eh->entry, 0, 2, argv);
 }
 //------------------------------

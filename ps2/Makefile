@@ -1,60 +1,60 @@
-EE_BIN = ../bin/InfoGB.elf
+# Programs
+EE_PACKER = ps2-packer-lite
+EE_BIN2S  = bin2s
+EE_STRIP  = ee-strip
 
-EE_CC = ee-gcc
-EE_CPP = ee-gcc
-CC = ee-gcc
-EE_CXX = ee-gcc
-
+# Set dir(s)
 IRX_DIR = ./irx
+BIN_DIR = ../bin
 
-ZLIB = ./lib/testz/zlib
-UNZLIB = ./lib/testz/unzip
+# PS2InfoGB elf file
+EE_BIN = $(BIN_DIR)/PS2InfoGB.elf
 
-EE_CXXFLAGS = -I$(NEWLIB)/include -I./gfxpipe -I./ 
-EE_CFLAGS = -I$(NEWLIB)/include -I./gfxpipe -I./ 
-#EE_CXXFLAGS += -finline-functions -fstrict-aliasing  -funsigned-char  -DLSB_FIRST -fomit-frame-pointer 
-EE_CFLAGS += -finline-functions -fstrict-aliasing  -funsigned-char  -DLSB_FIRST -fomit-frame-pointer 
+# Include headers/libs
+EE_INCS 	+= -I./gfxpipe -I./lib/zlib/include -I./lib/unzip/include 
+EE_LDFLAGS 	+= -L./lib
 
-EE_LIBS += ./lib/libcdvd/lib/libcdvd2.a -lgcc -lm -lc -lmc -lpad  -I. -lc -lstdc++ -lfileXio -lpatches -lcdvd
-EE_OBJS  = $(ZLIB)/adler32.o $(ZLIB)/compress.o $(ZLIB)/crc32.o $(ZLIB)/gzio.o $(ZLIB)/uncompr.o      \
-           $(ZLIB)/infcodes.o $(ZLIB)/trees.o $(ZLIB)/deflate.o $(ZLIB)/inflate.o $(ZLIB)/infblock.o  \
-           $(ZLIB)/inftrees.o $(ZLIB)/infutil.o $(ZLIB)/inffast.o $(ZLIB)/zutil.o $(UNZLIB)/explode.o \
-           $(UNZLIB)/unreduce.o $(UNZLIB)/unshrink.o $(UNZLIB)/unzip.o ./loader.o ./fakehost.o
+# Compilers flags
+EE_CXXFLAGS += -finline-functions -fstrict-aliasing -funsigned-char -fomit-frame-pointer 
+EE_CXXFLAGS += -s
+EE_CFLAGS 	= $(EE_CXXFLAGS)
 
-EE_OBJS += ./../mem.o ./../cpu.o ./../joypad.o ./../rom.o ./../sound.o ./../vram.o ./../RTC.o  \
-           ./usbd.o ./usbhdfsd.o ./libcdvd.o ./hw.o ./gs.o ./aio-fio.o ./sjpcm.o ./sjpcm_rpc.o \
-           ./fontmsx.o ./gfxpipe/gfxpipe.o ./ps2print.o ./ps2input.o ./ps2init.o ./ps2gui.o    \
-           ./ps2romselect.o ./InfoGB_System_ps2.o ./Reboot_ELF.o ./mass.o ./libtime.o
+# standard libs
+EE_LIBS += -lgcc -lstdc++ -lmc -lpad -lfileXio -lpatches
+
+# additional libs
+EE_LIBS += -lcdvdfs -lunzlib -lz -lcdvd
+
+# IRX modules - modules have to be in IRX_DIR
+EE_IRX = cdvd.irx usbd.irx usbhdfsd.irx sjpcm.irx fakehost.irx
+EE_IRX_OBJ = $(EE_IRX:.irx=.o)
+
+# Objects
+EE_OBJS  = $(EE_IRX_OBJ)
+EE_OBJS += ./../mem.o ./../cpu.o ./../joypad.o ./../rom.o ./../globals.o ./../sound.o ./../vram.o ./../RTC.o \
+	     ./hw.o ./gs.o ./sjpcm_rpc.o ./fontmsx.o ./gfxpipe/gfxpipe.o \
+	     ./PS2Print.o ./PS2Input.o ./PS2Init.o ./PS2GUI.o ./PS2InfoGB.o ./PS2Time.o ./PS2Browser.o ./Reboot_ELF.o\
+	     ./loader.o
 
 all: $(EE_BIN)
-	ee-strip $(EE_BIN)
-
-sjpcm.s:
-	bin2s $(IRX_DIR)/sjpcm.irx sjpcm.s sjpcm_irx
-
-libcdvd.s:
-	bin2s $(IRX_DIR)/cdvd.irx libcdvd.s libcdvd_irx
-
-usbd.s:
-	bin2s $(IRX_DIR)/usbd.irx usbd.s usbd_irx
-
-usbhdfsd.s:
-	bin2s $(IRX_DIR)/usbhdfsd.irx usbhdfsd.s usbhdfsd_irx
-
-loader.s:
-	$(MAKE) -C loader
-	bin2s lib/loader/loader.elf loader.s loader_elf
-
-fakehost.s:
-	bin2s $(PS2SDK)/iop/irx/fakehost.irx fakehost.s fakehost_irx
-
-clean:
-	rm ./libcdvd.s ./sjpcm.s ./usbd.s ./usbhdfsd.s *.o ../*.o ./lib/testz/zlib/*.o ./gfxpipe/*.o
-
-pack:
-	ps2-packer-lite $(EE_BIN) $(EE_BIN)-packed
+	$(EE_STRIP) $(EE_BIN)
+	@echo Done!
 
 release: clean all pack
+
+$(EE_IRX_OBJ:.o=.s):
+	$(EE_BIN2S) $(IRX_DIR)/$(@:.s=.irx) $@ $(@:.s=_irx)
+
+loader.s:
+	$(MAKE) -C lib/loader
+	$(EE_BIN2S) lib/loader/loader.elf loader.s loader_elf
+
+clean:
+	rm -f $(EE_OBJS) $(EE_IRX:.irx=.s) loader.s ./lib/loader/*.o ./lib/loader/*.elf
+
+pack:
+	$(EE_PACKER) $(EE_BIN) $(EE_BIN:.elf=-packed.elf)
+
 
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal

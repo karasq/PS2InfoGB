@@ -54,6 +54,8 @@ extern mbc1type       cartridge_mbc1;
 extern unsigned char *cartridge_ram;
 extern ramsize        cartridge_ramsize;
 
+extern char *cartridge_fname;
+
 int load_rom(char *);
 void initialize_rom();
 void free_rom();

@@ -74,5 +74,7 @@ int CdStatus(void);
 int CdStop(void);
 int CdSync(int mode);
 int CdTrayReq(int mode, u32 *traycnt);
+int CdFlushCache(void);
+unsigned int CdGetSize(void);
 
 #endif // _CDVD_H

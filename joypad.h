@@ -28,8 +28,8 @@
 #define GB_B		0x20
 #define GB_A		0x10
 #define GB_UP		0x04
-#define GB_DOWN		0x08
-#define GB_LEFT		0x02
+#define GB_DOWN	0x08
+#define GB_LEFT	0x02
 #define GB_RIGHT	0x01
 
 extern unsigned char current_joypad;

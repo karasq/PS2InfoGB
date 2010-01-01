@@ -3,7 +3,7 @@
    ____|   |    ____|      PSX2 OpenSource Project
   |     ___|   |____       (C)2002, Nick Van Veen
   ------------------------------------------------------------------------
-  iop_cdvdman.s		   CDVD Manager Functions.
+  iop_Cdman.s		   CDVD Manager Functions.
 			   taken from .irx files with symbol table.
 */
 

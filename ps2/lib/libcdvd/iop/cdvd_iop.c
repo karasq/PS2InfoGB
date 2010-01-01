@@ -28,7 +28,6 @@ enum PathMatch
 //static u8 cdVolDescriptor[2048];
 static CdRMode cdReadMode;
 
-// added by ps2reality
 int lastsector;
 int last_bk=0;
 
@@ -190,10 +189,12 @@ int CDVD_getdir_IOP(const char* pathname, const char* extensions, enum CDVD_getM
 
 // Functions called by the RPC server
 void* CDVDRpc_Stop();
+void* CDVDRpc_FlushCache();
 void* CDVDRpc_TrayReq(unsigned int* sbuff);
 void* CDVDRpc_DiskReady(unsigned int* sbuff);
 void* CDVDRpc_FindFile(unsigned int* sbuff);
 void* CDVDRpc_Getdir(unsigned int* sbuff);
+void* CDVDRpc_GetSize(unsigned int* sbuff);
 
 
 /* Internal use functions */
@@ -213,79 +214,11 @@ int FindPath(char* pathname);
 void* CDVD_rpc_server(int fno, void *data, int size);
 void CDVD_Thread(void* param);
 
-unsigned long _gp_store __attribute__((section(".bss")));
-
-#define StoreGP() \
-	__asm __volatile__ ("
-	sw $28, 0(%0)
-	li $28,0" :: "r"(_gp_store))
-
-#define RestoreGP() \
-	__asm __volatile ("
-	lw $28, 0(%0)" :: "r"(_gp_store))
 
 
-/*****************************************************
-* Thread-safe versions of the file-system operations *
-* These just call the normal versions                *
-*****************************************************/
-
-void T_CDVD_init( struct fileio_driver *driver)
-{
-	StoreGP();
-	CDVD_init(driver);
-	RestoreGP();
-}
-
-int T_CDVD_open( int kernel_fd, char *name, int mode)
-{
-	register int ret;
-	StoreGP();
-	ret=CDVD_open(kernel_fd,name,mode);
-	RestoreGP();
-	return ret;
-}
-
-int T_CDVD_close( int kernel_fd)
-{
-	register int ret;
-	StoreGP();
-	ret=CDVD_close(kernel_fd);
-	RestoreGP();
-	return ret;
-}
-
-int T_CDVD_read( int kernel_fd, char * buffer, int size )
-{
-	register int ret;
-	StoreGP();
-	ret=CDVD_read(kernel_fd,buffer,size);
-	RestoreGP();
-	return ret;
-}
-
-int T_CDVD_write( int kernel_fd, char * buffer, int size)
-{
-	register int ret;
-	StoreGP();
-	ret=CDVD_write(kernel_fd,buffer,size);
-	RestoreGP();
-	return ret;
-}
-
-int T_CDVD_lseek(int kernel_fd, int offset, int whence)
-{
-	register int ret;
-	StoreGP();
-	ret=CDVD_lseek(kernel_fd,offset,whence);
-	RestoreGP();
-	return ret;
-}
-
-
-/**********************************
-* Optimised CD Read by ps2reality *
-**********************************/
+/********************
+* Optimised CD Read *
+********************/
 
 int ReadSect(u32 lsn, u32 sectors, void *buf, CdRMode *mode)
 {
@@ -354,7 +287,7 @@ int dummy()
 
 void CDVD_init( struct fileio_driver *driver)
 {
-	printf("CDVD: CDVD Filesystem v1.10\n");
+	printf("CDVD: CDVD Filesystem v1.15\n");
 	printf("by A.Lee (aka Hiryu) & Nicholas Van Veen (aka Sjeep)\n");
 	printf("CDVD: Initializing '%s' file driver.\n", driver->device);
 
@@ -526,16 +459,16 @@ int CDVD_read( int kernel_fd, char * buffer, int size )
 	if ((fd_table[i].filePos+size) > fd_table[i].fileSize)
 		size = fd_table[i].fileSize - fd_table[i].filePos;
 
-	// Updates by ps2reality
-	if(size<=0) return 0;
-	if(size>16384) size=16384; 
+	if (size<=0)
+		return 0;
+
+	if (size>16384)
+		size=16384; 
 
 	// Now work out where we want to start reading from
 	start_sector = fd_table[i].LBA + (fd_table[i].filePos >> 11);
 	off_sector = (fd_table[i].filePos & 0x7FF);
 
-	// Updates by ps2reality
-	//num_sectors = ((off_sector + size) >> 11) + 1;
 	num_sectors = (off_sector + size);
 	num_sectors = (num_sectors>>11)+((num_sectors & 2047)!=0);
 
@@ -543,17 +476,6 @@ int CDVD_read( int kernel_fd, char * buffer, int size )
 		printf("CDVD_read: read sectors %d to %d\n",start_sector,start_sector+num_sectors);
 	#endif
 
-/*
-	// Read the data (we only ever get 16KB max request at once)
-	if (CdRead(start_sector, num_sectors, local_buffer, &cdReadMode) != TRUE)
-	{
-		//printf("sector = %d, start sector = %d\n",sector,start_sector);
-		printf("Couldn't Read from file for some reason\n");
-		return 0;
-	}
-	CdSync(0);
-*/
-	// Updates by ps2reality
 	// Skip a Sector for equal (use the last sector in buffer)
 	if(start_sector==lastsector)
 	{
@@ -665,12 +587,12 @@ int _start( int argc, char **argv)
 	for (i=0;i < 16; i++)
 		filedriver_functarray[i] = dummy;
 
-	filedriver_functarray[ FIO_INITIALIZE ] = T_CDVD_init;
-	filedriver_functarray[ FIO_OPEN ] = T_CDVD_open;
-	filedriver_functarray[ FIO_CLOSE ] = T_CDVD_close;
-	filedriver_functarray[ FIO_READ ] = T_CDVD_read;
-	filedriver_functarray[ FIO_WRITE ] = T_CDVD_write;
-	filedriver_functarray[ FIO_SEEK ] = T_CDVD_lseek;
+	filedriver_functarray[ FIO_INITIALIZE ] = CDVD_init;
+	filedriver_functarray[ FIO_OPEN ] = CDVD_open;
+	filedriver_functarray[ FIO_CLOSE ] = CDVD_close;
+	filedriver_functarray[ FIO_READ ] = CDVD_read;
+	filedriver_functarray[ FIO_WRITE ] = CDVD_write;
+	filedriver_functarray[ FIO_SEEK ] = CDVD_lseek;
 
 	FILEIO_del( "cdfs");
 	FILEIO_add( &file_driver);
@@ -1349,6 +1271,7 @@ int FindPath(char* pathname)
 // fills an array of TocEntry stucts in IOP memory
 int CDVD_getdir_IOP(const char* pathname, const char* extensions, enum CDVD_getMode getMode, struct TocEntry tocEntry[], unsigned int req_entries)
 {
+	// TO DO
 	return FALSE;
 }
 
@@ -1663,6 +1586,34 @@ int CDVD_GetDir_RPC(const char* pathname, const char* extensions, enum CDVD_getM
 	return (matched_entries);
 }
 
+int CdFlushCache(void)
+{
+	strcpy(CachedDirInfo.pathname, "");	// The pathname of the cached directory
+	CachedDirInfo.valid = FALSE;			// Cache is not valid
+	CachedDirInfo.path_depth = 0;			// 0 = root)
+	CachedDirInfo.sector_start = 0;			// The start sector (LBA) of the cached directory
+	CachedDirInfo.sector_num = 0;			// The total size of the directory (in sectors)
+	CachedDirInfo.cache_offset = 0;			// The offset from sector_start of the cached area
+	CachedDirInfo.cache_size = 0;			// The size of the cached directory area (in sectors)
+
+	return TRUE;
+}
+
+unsigned int CdGetSize(void)
+{
+	if (CDVD_GetVolumeDescriptor() != TRUE)
+		return TRUE;
+
+	return CDVolDesc.volSize;
+
+}
+
+void* CDVDRpc_FlushCache()
+{
+	CdFlushCache();
+
+	return NULL;
+}
 
 
 void* CDVDRpc_Stop()
@@ -1737,6 +1688,11 @@ void* CDVDRpc_Getdir(unsigned int* sbuff)
 	return sbuff;
 }
 
+void* CDVDRpc_GetSize(unsigned int* sbuff)
+{
+	sbuff[0] = CdGetSize();
+	return sbuff;
+}
 
 /*************************************************
 * The functions below are for internal use only, *
@@ -1782,6 +1738,8 @@ void* CDVD_rpc_server(int fno, void *data, int size)
 			return CDVDRpc_TrayReq((unsigned*)data);
 		case CDVD_DISKREADY:
 			return CDVDRpc_DiskReady((unsigned*)data);
+		case CDVD_FLUSHCACHE:
+			return CDVDRpc_FlushCache();
 	}
 
 	return NULL;
@@ -1839,34 +1797,28 @@ void TocEntryCopy(struct TocEntry* tocEntry, struct dirTocEntry* internalTocEntr
 	if (CDVolDesc.filesystemType == 2)
 	{
 		// This is a Joliet Filesystem, so use Unicode to ISO string copy
-
 		filenamelen = internalTocEntry->filenameLength/2;
-
-		if (!(tocEntry->fileProperties & 0x02))
-		{
-			// strip the ;1 from the filename
-			filenamelen -= 2;
-		}
 
 		for (i=0; i < filenamelen; i++)
 			tocEntry->filename[i] = internalTocEntry->filename[(i<<1)+1];
-
-		tocEntry->filename[filenamelen] = 0;
 	}
 	else
 	{
 		filenamelen = internalTocEntry->filenameLength;
 
-		if (!(tocEntry->fileProperties & 0x02))
-		{
-			// strip the ;1 from the filename
-			filenamelen -= 2;
-		}
-
 		// use normal string copy
 		strncpy(tocEntry->filename,internalTocEntry->filename,128);
-		tocEntry->filename[filenamelen] = 0;
 	}
+
+	tocEntry->filename[filenamelen] = 0;
+
+	if (!(tocEntry->fileProperties & 0x02))
+	{
+		// strip the ;1 from the filename (if it's there)
+		strtok(tocEntry->filename, ";");
+	}
+
+
 }
 
 // Check if a TOC Entry matches our extension list

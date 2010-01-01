@@ -1,4 +1,4 @@
-EE_LIB = ../lib/libcdvd2.a
+EE_LIB = ../lib/libcdvdfs.a
 EE_OBJS = cdvd_rpc.o
 
 all: $(EE_LIB)

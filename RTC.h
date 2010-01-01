@@ -1,7 +1,11 @@
+// RTC for InfoGB
+// Author: Krystian 'KarasQ' Karas
+// Contact: k4rasq@gmail.com
+
 #ifndef _RTC_HEADER_H_
 #define _RTC_HEADER_H_
 
-#include "ps2/libtime.h"
+#include "PS2Time.h"
 
 typedef struct _RTC_Data {
   int RAMBank;
@@ -21,7 +25,7 @@ typedef struct _RTC_Data {
 } RTC_Data;
 
 extern RTC_Data RTC;
-extern ps2time timer;
+extern PS2Time timer;
 
 void UpdateClockData(RTC_Data* RTC);
 

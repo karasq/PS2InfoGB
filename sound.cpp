@@ -93,7 +93,7 @@ void ProcessSound(int cycles)
           if (sOn) {
                #if 1
                if (s1Play) {
-                    if (s1Freq < 2043) {
+                    if (s1Freq < 2048) {
                          dat = sq[s1Wav][(s1FCyc / (2048 - s1Freq)) >> 2];
                          
                          if (dat) 
@@ -165,8 +165,8 @@ void ProcessSound(int cycles)
                #endif
                #if 1
                if (s2Play) {
-                    if (s2Freq < 2043) {
-                         dat = sq[s2Wav][(s2FCyc / (2048 - s2Freq)) >> 2];
+                    if (s2Freq < 2048) {
+                         dat = sq[s2Wav][s2FCyc / ((2048 - s2Freq)*4)];
                          
                          if (dat) 
                               snd = voltab[s2Env];
@@ -220,7 +220,7 @@ void ProcessSound(int cycles)
                #if 1
                if (s3Play) {
                     if (s3Freq < 2045) {
-                         int pos = (s3FCyc / (2048 - s3Freq)) >> 1;
+                         int pos = (s3FCyc / ((2048 - s3Freq)*2));
                          dat = wavram[pos];
                          switch(s3Vol) {
                               case 0:

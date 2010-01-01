@@ -1,11 +1,11 @@
 # Remove the line below, if you want to disable silent mode
 #.SILENT:
 
-all: build-iop build-ee build-example
+all: build-ee build-iop build-example
 
 clean:
-	$(MAKE) -C iop clean
 	$(MAKE) -C ee clean
+	$(MAKE) -C iop clean
 	$(MAKE) -C example clean
 
 build-iop:

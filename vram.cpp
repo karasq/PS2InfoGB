@@ -35,30 +35,27 @@
 static unsigned short int colors16[4] = { 0x7FFF, 0x6B5A, 0x4E73, 0x0000 };
 //static unsigned short int colors16[4] = { 0x7FFF, 0x3E5A, 0x64F3, 0x0000 };
 
-//void set_color(int x, unsigned short int c);
-
 int TileSign;
 unsigned char *BkgTiles;
 unsigned char *BkgTable;
 unsigned char *WindowTable;
 
-void vram_set_color(int x, int c)
+/*void vram_set_color(int x, int c)
 {
 	infogb_set_color(x, (unsigned short)c);
 	colors16[x] = c;
-}
+}*/
 
 void reset_colors()
 {
 	int i;
-	
 	//if (color_gameboy) 
 	//	for (i = 0; i < 64; i++)
 	//		set_color(i, 0x7FFF);
 	//else
 		for (i = 0; i < 4; i++)
 			infogb_set_color(i, colors16[i]); 
-	infogb_set_color(64, 0x7FFF);
+   infogb_set_color(64, 0x7FFF);
 }
 
 int window_current_line = 0;
@@ -253,7 +250,7 @@ static inline void vram_plot_line_sprites_color()
 
 static inline void vram_plot_line()
 {
-	char *table, *tiles, *tileptr;
+   char *table, *tiles, *tileptr;
 	int bit1, bit2;
 	int color;
 	signed char tile;
@@ -319,7 +316,7 @@ static inline void vram_plot_line()
 
 static inline void vram_plot_line_color()
 {
-	char *table, *tiles, *tileptr, *attrtab;
+   char *table, *tiles, *tileptr, *attrtab;
 	int bit1, bit2;
 	int color;
 	signed char tile;
@@ -378,6 +375,7 @@ static inline void vram_plot_line_color()
 			strip[x] = color;
 		}
 	} else {
+      
 		for (x = 0, pix = 0x80 >> ofn; pix; pix >>= 1, x++) {
 			bit1  = (*tileptr       & pix) ? 1 : 0;
 			bit2  = (*(tileptr + 1) & pix) ? 2 : 0;
@@ -589,7 +587,7 @@ static inline void vram_plot_line_window_color()
 //extern int ready;
 
 void vram_plot_screen()
-{	
+{
 	if (infogb_ready)
 		return;
 		

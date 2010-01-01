@@ -47,7 +47,7 @@
 /* System-depended functions */
 /* To porters, these funcions must be implemented! */
 
-int infogb_init(char *display);
+int infogb_init(char *display = 0);
 int infogb_close();
 int infogb_create_window(char *, int, int);
 int infogb_poll_events();

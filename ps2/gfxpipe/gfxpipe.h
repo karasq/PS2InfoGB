@@ -1,3 +1,8 @@
+/* 
+ * WARNING!!: ONLY gp_gouradrect, gp_frect, gp_point, gp_texrect, gp_linerect 
+ * DON'T NEED SHIFFTING LEFT COORDINATES BY 4 
+ */
+
 // GFX-Pipe by Vzzrzzn, modifications by Sjeep
 
 #ifndef _GFXPIPE_H_
@@ -77,10 +82,8 @@ void gp_stftriangle(gfxpipe *p, unsigned x1, unsigned y1, unsigned z1, float s1,
 // wpxls, hpxls = width, height in units of pixels
 void gp_uploadTexture(gfxpipe *p, int TBP, int TBW, int xofs, int yofs, int pxlfmt, void *tex, int wpxls, int hpxls);
 
-
 void gp_enablezbuf(gfxpipe *p);
 void gp_disablezbuf(gfxpipe *p);
-
 
 void gp_setTex(gfxpipe *p, u32 tbp, u32 tbw, u32 texwidth, u32 texheight, u32 tpsm, u32 cbp, u32 cbw, u32 cpsm,u32 filter);
 void gp_texrect(gfxpipe *p, u32 x1, u32 y1, u32 u1, u32 v1, u32 x2, u32 y2, u32 u2, u32 v2, u32 z, u32 colour);
