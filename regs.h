@@ -23,8 +23,6 @@
 #ifndef __REGS_H__
 #define __REGS_H__
 
-#define VBLANK_INT 0x0040
-
 #define JOYPAD  (hiram[0xF00])
 #define SIODATA (hiram[0xF01])
 #define SIOCONT (hiram[0xF02])
@@ -37,6 +35,7 @@
 #define SNDREG11 (hiram[0xF11])
 #define SNDREG12 (hiram[0xF12])
 #define SNDREG13 (hiram[0xF13])
+#define SNDREG14 (hiram[0xF14])
 #define SNDREG21 (hiram[0xF16])
 #define SNDREG22 (hiram[0xF17])
 #define SNDREG23 (hiram[0xF18])

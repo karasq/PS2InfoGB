@@ -21,8 +21,8 @@
 #define TXTMIN  0
 #define TXTMAX  320
 
-#define NES_TEX	0x0A0000 + 0x0A0000 
-#define NES_CLUT	0x128000 + 0x0A0000 
+#define NES_TEX	0x0A0000 + 0x0A0000
+#define NES_CLUT	0x128000 + 0x0A0000
 #define VRAM_MAX	0x3E8000
 
 #define GS256   8

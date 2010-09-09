@@ -1,16 +1,24 @@
 --------------------------- PS2InfoGB Note ---------------------------
 
-This is PS2InfoGB rev. 6a continued by KarasQ. It's based on dlanor's 
+This is PS2InfoGB rev. 6b continued by KarasQ. It's based on dlanor's 
 source of PS2InfoGB rev. 4
 
 PS2 port of InfoGB 0.5J by '7not6'
 
-Revision Date: 2010.01.01
+Revision Date: 2010.09.26
 
 ------------------------- Changes history -------------------------
 
 ==== InfoGB continued by KarasQ ====
-=> Rev.6a 
+=> Rev.6b
+     - Added: Show FPS option in menu
+     - Added: 64K RAM size support
+     - Fixed: sound issue (not property synchronized)
+     - Fixed: sound timing for ROMs which works in Double Speed Mode
+     - Optimized: sound processing function (reduced function calls,
+       which caused low rate FPS in ROMs which work in CPU Double Speed Mode)
+       
+=> Rev.6a
      - Added: Access to mc1:/ device
      - Added: Support for sub-directories
      - Added: Sorting list (separately for folders and files)
@@ -35,6 +43,8 @@ Revision Date: 2010.01.01
         * 'ROM+MBC3+TIMER+RAM+BATTERY'
         * 'ROM+MBC3+TIMER+BATTERY'
         * 'Hudson-HuC3'
+
+-------------------------------------------------------------------
 
 ==== InfoGB by dlanor ====
 => Rev.4
@@ -88,7 +98,7 @@ Revision Date: 2010.01.01
 
  Well, probably you will be able to continue game but without real time clock.
  Sometimes games offer to set real time clock (e.g. Pokemon Crystal), but you will
- set it every time you load battery backed save.
+ set it evry time you load battery backed save.
 
  But as I said, it's random, so it doesn't always happen.
 
@@ -123,7 +133,9 @@ Revision Date: 2010.01.01
    - Buttons configuration - see paragraph "Possibility to change buttons configuration"
    
    - Turbo buttons - On/Off turbo buttons
-   
+
+   - Show FPS - On/off current FPS rate info
+
    - Boot ELF - saves current config and run ELF follow ELF Path.
 
    [*] Preselecting ROM
@@ -139,10 +151,10 @@ Revision Date: 2010.01.01
  You can turn off this option anytime you want. Just open In-browser menu (push start in 
  browser) and turn it off.
 
- DON'T FORGET TO SAVE YOUR CONFIG (Save CNF) EVERY TIME YOU CHANGE YOUR PESELECTED ROM OR
- ANYTHING ELSE (IN-GAME MENU) OTHERWISE THE CHANGE WILL NOT AFFECT ON THE NEXT REBOOT. 
- THE ONLY EXCEPTION IS IN-BROWSER MENU, EVERY TIME WHEN YOU LEAVE IT, CONFIG FILE WILL BE 
- SAVED
+ I DON'T WARRANT BACKWARD COMPATIBILITY WITH PREVOUSE REVISIONS. I RECOMMEND TO REMOVE OR MAKE 
+ A COPY OF ALL .srm AND .sav FILE BEFORE YOU RUN A NEW REVISION. SOMETIMES THERE IS NEED TO CHANGE 
+ SAVE FILE STRUCTURE SO IT MAY BE NOT COMPATIBILE WITH PREVIOUSE ONE! DON'T FORGET THIS FUNCTION IS 
+ STILL IN BETA TESTING
 
    [*] Possibility to change button configuration
  
@@ -173,6 +185,10 @@ Revision Date: 2010.01.01
  The location of save state and battery backed save depends on which current device is set.
  Basically it's [device]:/PS2GB/. You can change "Current Save Device" in In-browser menu
  to MC0, MC1 and MASS.
+ 
+ I DON'T WARRANT BACKWARD COMPATIBILITY WITH PREVOUSE REVISIONS. I RECOMMEND TO REMOVE 
+ ALL .srm AND .sav FILE WHEN YOU RUN A NEW REVISION. SOMETIMES THERE IS NEED TO CHANGE 
+ SAVE FILE STRUCTURE SO IT MAY BE NOT COMPATIBILE WITH PREVIOUSE ONE!
 
    [*] Sorting List
 
@@ -189,9 +205,7 @@ Revision Date: 2010.01.01
 
 - In one folder you can put up to 256 files and up to 128 folders. Don't magnify
  with folder depth either!
-
-- You can remove file from mc0:/PS2GB/gb.brm cause it's not need anymore
-
+ 
 - "Important reminder for saved games:
  
  If you are playing a game that saves to the GB 'battery RAM', make

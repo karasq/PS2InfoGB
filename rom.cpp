@@ -67,67 +67,65 @@ int check_zip(char *filename)
 	else if(!strcasecmp(extension, ".ZIP"))return 1;
 	else return 0;
 }
-              extern "C" {
-      void display_error(char* errmsg, int fatal);
-     }
+
 int load_rom(char *filename)
 {
    unsigned long file_length;
-   
-   int fd, fd_size;	
+
+   int fd, fd_size;
    int ret = 0;
    int ok = 0;
-   
+
    char *name = strrchr(filename, '/');
-   
+
    if ( name ) {
       name++;
-      
+
       if ( strlen(name) > 32) {
          return -4;
       }
-      
+
       sprintf(tempname, "%s", name);
       cartridge_fname = tempname;
    }
-   
-   if ( check_zip(filename) ) { 
+
+   if ( check_zip(filename) ) {
       char tmpnom[0x100];
-      
+
       unzFile fd2 = unzOpen(filename);
-      
+
       if ( fd2 == NULL ) return (1);
-      
-      // Go to first file in archive 
+
+      // Go to first file in archive
       ret = unzGoToFirstFile(fd2);
-      
+
       if ( ret != UNZ_OK ) {
          unzClose(fd2);
          return (-5);
       }
-      
-      // Get information on the file 
+
+      // Get information on the file
       ret = unzGetCurrentFileInfo(fd2, &info, tmpnom, 0x100, NULL, 0, NULL, 0);
       if ( ret != UNZ_OK ) {
          unzClose(fd2);
          return (-5);
       }
-      
-      //Open the file for reading 
+
+      //Open the file for reading
       ret = unzOpenCurrentFile(fd2);
       if ( ret != UNZ_OK ) {
          unzClose(fd2);
          return (-5);
       }
-      
-      // Allocate file data buffer 
+
+      // Allocate file data buffer
       fd_size = info.uncompressed_size;
-      
-      // Read (decompress) the file 
+
+      // Read (decompress) the file
       // cartridge_rom = (unsigned char *)malloc(fd_size);
       cartridge_rom = (u8 *)memalign(64, fd_size);
       ret = unzReadCurrentFile(fd2,/*(char *)*/cartridge_rom, info.uncompressed_size);
-      
+
       if ( ret != info.uncompressed_size ) {
          //free(buf2);
          unzCloseCurrentFile(fd2);
@@ -135,7 +133,7 @@ int load_rom(char *filename)
          return (-5);
       }
       //printf("zip decomp %d \n",(int)info.uncompressed_size);
-      
+
       // Close the current file
       ret = unzCloseCurrentFile(fd2);
       if ( ret != UNZ_OK ) {
@@ -143,18 +141,18 @@ int load_rom(char *filename)
          return (-5);
       }
       // printf("zip close file\n");
-      
-      // Close the archive 
+
+      // Close the archive
       ret = unzClose(fd2);
       if ( ret != UNZ_OK ) {
          return (-5);
       }
       // printf("zip close archive\n");
-      
+
       // Check for 512-byte header
       // ok = 0;
       // cartridge_rom = (unsigned char *)malloc(fd_size);
-      // for(n = 0; n <fd_size;n++)cartridge_rom[n]=buf[n+ok];  
+      // for(n = 0; n <fd_size;n++)cartridge_rom[n]=buf[n+ok];
       printf("zip header / rom copy %d %d %s \n",fd_size,ok,tmpnom);
    } else {
       printf("ROM path: %s", filename);
@@ -164,30 +162,30 @@ int load_rom(char *filename)
          printf("%s not found.\n",filename);
          return 0;
       }
-      
+
       file_length = fioLseek(fd,0,SEEK_END);
       fioLseek(fd,0,SEEK_SET);
-      
+
       cartridge_rom = (unsigned char *)malloc(file_length);
       fioRead(fd, (char *)cartridge_rom, file_length);
-      
+
       fioClose(fd);
    }
-   
-   
+
+
    printf("cartridge_fname: %s\n", cartridge_fname);
    printf("Cartridge Name: [");
-   
-   for ( fd = 0; fd < 16; fd++ ) 
+
+   for ( fd = 0; fd < 16; fd++ )
       printf("%c", cartridge_rom[0x134+fd]);
    printf("]\n");
-   
+
    if ( (cartridge_rom[0x143] == 0x80) || (cartridge_rom[0x143] == 0xC0) )
       color_gameboy = 1;
-   
+
    if ( cartridge_rom[0x146] == 0x03 )
       super_gameboy = 1;
-   
+
    if ( force_system == REGULAR ) {
       //super_gameboy = 0;
       color_gameboy = 0;
@@ -195,17 +193,17 @@ int load_rom(char *filename)
       //super_gameboy = 0;
       color_gameboy = 1;
    }
-   
+
    if ( color_gameboy )
       printf("Color Gameboy");
    else
       printf("Gameboy");
-      
+
    if ( super_gameboy )
       printf("+Super Gameboy Support");
-   
-   printf(" Mode\n");  
-   
+
+   printf(" Mode\n");
+
    printf("Cart Type: ");
      switch(cartridge_rom[0x147]) {
           case 0x00:
@@ -294,12 +292,12 @@ int load_rom(char *filename)
                cartridge_type = TYPE_Unknown;
                break;
      }
-     
+
      if(cartridge_type == TYPE_Unknown) {
          printf("Error! Unknown cartridge type %d!\n", cartridge_rom[0x147]); // 0xF0
          return -1;
      }
-     
+
      printf("Cart Size: ");
      switch(cartridge_rom[0x148]) {
           case 0x00:
@@ -342,7 +340,7 @@ int load_rom(char *filename)
                cartridge_size = SIZE_Unknown;
                printf("Unknown\n");
      }
-     
+
      if(cartridge_size == SIZE_Unknown) {
           printf("Error! Unknown cartridge size: %02X!\n", cartridge_rom[0x148]);
           return -2;
@@ -365,7 +363,11 @@ int load_rom(char *filename)
                     break;
                case RAM_SIZE_128KB:
                     printf("128 KB\n");
-                    cartridge_ramsize =  RAM_SIZE_128KB;
+                    cartridge_ramsize = RAM_SIZE_128KB;
+                    break;
+               case RAM_SIZE_64KB:
+                    printf("64 KB\n");
+                    cartridge_ramsize = RAM_SIZE_64KB;
                     break;
                default:
                     printf("Unknown (%d)\n", cartridge_rom[0x149]);
@@ -390,15 +392,15 @@ void free_rom()
 {
      if(cartridge_rom)
           free(cartridge_rom);
-          
+
      rom_save_ram();
-     
+
      if(cartridge_ram)
           free(cartridge_ram);
-          
+
      if(cartridge_fname)
           free(cartridge_fname);
-                    
+
      cartridge_type = TYPE_Unknown;
      cartridge_size = SIZE_Unknown;
 		 cartridge_ramsize = (ramsize)cartridge_size;
@@ -406,13 +408,13 @@ void free_rom()
      cartridge_rom  = (unsigned char *)NULL;
      cartridge_ram  = (unsigned char *)NULL;
      cartridge_fname= (char *)NULL;
-     
+
 }
 
 void install_rom()
 {
      int i;
-     
+
      switch(cartridge_size) {
           case SIZE_32k:
                for(i = 0; i < 8; i++)
@@ -420,7 +422,7 @@ void install_rom()
                break;
           case SIZE_64k:
           case SIZE_128k:
-          case SIZE_256k:          
+          case SIZE_256k:
           case SIZE_512k:          /* All these get bank 0 to $0-$3fff and 1 to $4000-$7fff */
           case SIZE_1M:
           case SIZE_2M:
@@ -438,7 +440,7 @@ void install_ram()
 {
      if(cartridge_ramsize == SIZE_Unknown)
           return;
-     
+
      switch(cartridge_ramsize) {
           case RAM_SIZE_8KB:
                cartridge_ram = (unsigned char *)malloc(0x2000);
@@ -456,10 +458,14 @@ void install_ram()
                cartridge_ram = (unsigned char *)malloc(0x2000 * 16);
                memset(cartridge_ram, 0xFF, 0x2000 * 16);
                break;
+          case RAM_SIZE_64KB: // KarasQ: new RAM size 64K support
+               cartridge_ram = (unsigned char *)malloc(0x2000 * 8);
+               memset(cartridge_ram, 0xFF, 0x2000 * 16);
+               break;
           default:
                return;
      }
-     
+
      rom_load_ram();
      rom_select_ram_bank(0);
 }
@@ -530,7 +536,7 @@ void rom_select_bank(int bank, int wbank)
           default:
                return;
      }
-     
+
      /* TODO: make sure only MBC5 (afaik) is only allowed to do this */
      if ((wbank == 4) && (bank == 0) && (cartridge_type < TYPE_ROM_MBC5)) {
           //printf("Trying to set bank 1 to cartbank 0\n");
@@ -539,7 +545,7 @@ void rom_select_bank(int bank, int wbank)
 
      b = bank * 0x4000;
      rptr = &cartridge_rom[b];
-     
+
      for(i = 0; i < 4; i++) {
           install_memory(i + wbank, rptr + (i * 0x1000));
      }
@@ -557,14 +563,14 @@ void rom_select_ram_bank(int bank)
                return;
           case RAM_SIZE_8KB:
                install_memory(0x0A, cartridge_ram);
-               install_memory(0x0B, cartridge_ram + 0x1000);          
+               install_memory(0x0B, cartridge_ram + 0x1000);
                return;
           default:
                break;
      }
-     
+
      b = bank * 0x2000;
-     
+
      install_memory(0x0A, cartridge_ram + b);
      install_memory(0x0B, cartridge_ram + b + 0x1000);
 }
@@ -574,7 +580,7 @@ void rom_create_sav_path(char *path)
 #ifndef AMIGA
      const char *GBEDIR = ".gbesav";
      char *var;
-     
+
      if(!(var = getenv("HOME"))) {
           if(!(var = getenv("USER"))) {
                //sprintf(path, ".%c", PATH_SEPARATOR);
@@ -594,31 +600,31 @@ void rom_create_sav_path(char *path)
 void rom_save_ram()
 {
    int fdo;//, i, j;
-   /* Note all these have 2 things in common: 
+   /* Note all these have 2 things in common:
       RAM and BATTERY ..
     */
-   
+
    switch(cartridge_type) {
       case TYPE_ROM_MBC1_RAM_BATTERY:
       case TYPE_ROM_MBC2_BATTERY:        /* MBC2 has ram in it */
       case TYPE_ROM_MBC3_RAM_BATTERY:
-      case TYPE_ROM_MBC3_TIMER_BATTERY:     // KarasQ: new cartridge type 
-      case TYPE_ROM_MBC3_TIMER_RAM_BATTERY: // KarasQ: new cartridge type       
+      case TYPE_ROM_MBC3_TIMER_BATTERY:     // KarasQ: new cartridge type
+      case TYPE_ROM_MBC3_TIMER_RAM_BATTERY: // KarasQ: new cartridge type
       case TYPE_ROM_MBC5_RAM_BATTERY:
       case TYPE_ROM_HUDSON_HUC3:            // KarasQ: new cartridge type
          break;
       default:
          return;
    }
-   
-   fdo = fioOpen(g_PS2Browser.getSavePath(cartridge_fname, ".sav"), 
+
+   fdo = fioOpen(g_PS2Browser.getSavePath(cartridge_fname, ".sav"),
             O_WRONLY | O_CREAT | O_BINARY);
-   
+
    if ( fdo < 0 ) {
       printf("error ouverture/ecriture %d", fdo);
       return;
    }
-   
+
    switch ( cartridge_ramsize ) {
       case RAM_SIZE_2KB:
          fioWrite(fdo, cartridge_ram, 0x400*2);
@@ -632,50 +638,55 @@ void rom_save_ram()
       case RAM_SIZE_128KB:
          fioWrite(fdo, cartridge_ram, 0x400*128);
          break;
+      case RAM_SIZE_64KB: // KarasQ: new RAM size 64K support
+         fioWrite(fdo, cartridge_ram, 0x400*64);
+         break;
    }
-   
+
    // KarasQ: Real Time Clock Data is saved if true
-   if ( cartridge_type == TYPE_ROM_MBC3_TIMER_RAM_BATTERY ) {
+   if ( cartridge_type == TYPE_ROM_MBC3_TIMER_RAM_BATTERY ||
+        cartridge_type == TYPE_ROM_MBC3_TIMER_BATTERY )
+   {
       printf("RTC mode ON... ");
-      fioWrite(fdo, &RTC.Seconds, (10 * sizeof(int)) + sizeof(int));
+      fioWrite(fdo, &RTC.Seconds, (11*sizeof(int)));
    }
-   
+
    printf("saveram successfully saved for %s\n", cartridge_fname);
    fioClose(fdo);
-   
+
    return;
 }
 
 void rom_load_ram()
 {
    int fdi;
-   
+
    switch(cartridge_type) {
       case TYPE_ROM_MBC1_RAM_BATTERY:
       case TYPE_ROM_MBC2_BATTERY:
       case TYPE_ROM_MBC3_RAM_BATTERY:
-      case TYPE_ROM_MBC3_TIMER_BATTERY:     // KarasQ: new cartridge type 
-      case TYPE_ROM_MBC3_TIMER_RAM_BATTERY: // KarasQ: new cartridge type       
+      case TYPE_ROM_MBC3_TIMER_BATTERY:     // KarasQ: new cartridge type
+      case TYPE_ROM_MBC3_TIMER_RAM_BATTERY: // KarasQ: new cartridge type
       case TYPE_ROM_MBC5_RAM_BATTERY:
       case TYPE_ROM_HUDSON_HUC3:            // KarasQ: new cartridge type
          break;
       default: return;
    }
-   
+
    fdi = fioOpen(g_PS2Browser.getSavePath(cartridge_fname, ".sav"),  O_RDONLY | O_BINARY);
-   
-   if ( fdi <= 0 ) 
+
+   if ( fdi <= 0 )
    {
       if ( cartridge_type == TYPE_ROM_MBC3_TIMER_RAM_BATTERY ||
-           cartridge_type == TYPE_ROM_MBC3_TIMER_BATTERY ) 
+           cartridge_type == TYPE_ROM_MBC3_TIMER_BATTERY )
       {
          // KarasQ: Initlialize RTC if it's first run (save doesn't exist yet...)
          RTC.LastTime = timer.getTime(0);
-            
+
          //struct tm *lt;
          //lt = ps2time_localtime(&RTC.LastTime);
          //lt = localtime(&RTC.LastTime);
-            
+
          /* FIXME: Is it realy have to be initialized with real time values?
             RTC.Seconds = lt->tm_sec;
             RTC.Minutes = lt->tm_min;
@@ -683,7 +694,7 @@ void rom_load_ram()
             RTC.Days = lt->tm_yday & 255;
             RTC.Control = (RTC.Control & 0xfe) | (lt->tm_yday > 255 ? 1: 0);
           */
-             
+
          // Seems to work corectly
          RTC.Seconds = 0;
          RTC.Minutes = 0;
@@ -691,10 +702,10 @@ void rom_load_ram()
          RTC.Days = 0;
          RTC.Control = (RTC.Control & 0xfe) | (0 > 255 ? 1: 0);
       }
-      
+
       return;
    }
-   
+
    switch ( cartridge_ramsize ) {
       case RAM_SIZE_2KB:
          fioRead(fdi, cartridge_ram, 2*0x400);
@@ -708,18 +719,21 @@ void rom_load_ram()
       case RAM_SIZE_128KB:
          fioRead(fdi, cartridge_ram, 128*0x400);
          break;
+      case RAM_SIZE_64KB: // KarasQ: new RAM size 64K support
+         fioRead(fdi, cartridge_ram, 64*0x400);
+         break;
    }
-   
+
    // Real Time Clock Data is loaded if true
    if ( cartridge_type == TYPE_ROM_MBC3_TIMER_RAM_BATTERY ||
-        cartridge_type == TYPE_ROM_MBC3_TIMER_BATTERY ) 
+        cartridge_type == TYPE_ROM_MBC3_TIMER_BATTERY )
    {
       printf("RTC mode ON... ");
-      fioRead(fdi, &RTC.Seconds, (10*sizeof(int)) + sizeof(int));
+      fioRead(fdi, &RTC.Seconds, (11*sizeof(int)));
    }
-   
+
    printf("saveram successfully read for %s\n", cartridge_fname);
    fioClose(fdi);
-   
+
    return;
 }

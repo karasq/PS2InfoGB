@@ -59,7 +59,7 @@ int HDMADst;
 int HDMASrc;
 int HDMACnt;
 
-extern int vram_mode;
+extern int gbMode;
 
 void install_memory(int bank, void *fromwhere)
 {
@@ -71,11 +71,11 @@ inline void memory_select_wram_bank(unsigned int bank, unsigned int where)
 	char *ptr;
 
 	if (!color_gameboy)	/* Useless on regular GB */
-		return;	
-	
+		return;
+
 	if (bank == 0)
 		bank = 1;
-	
+
 	ptr = (char *)internal_ram + (bank * 0x1000);
 
 	install_memory(where, ptr);
@@ -84,10 +84,10 @@ inline void memory_select_wram_bank(unsigned int bank, unsigned int where)
 inline void memory_select_vram_bank(int bank, int where)
 {
 	char *ptr;
-	
+
 	if(!color_gameboy)
 		return;
-	
+
 	ptr = (char *)video_ram + (bank * 0x2000);
 
 	install_memory(where, ptr);
@@ -97,16 +97,16 @@ inline void memory_select_vram_bank(int bank, int where)
 int initialize_memory()
 {
 	int i;
-	
-	for(i = 0; i < 16; i++) 
+
+	for(i = 0; i < 16; i++)
 		gameboy_memory[i] = (unsigned char *)NULL;
-	
-	memset(vidram, 0, sizeof(vidram));	
+
+	memset(vidram, 0, sizeof(vidram));
 	video_ram = (unsigned char *)&vidram[0];
-	
+
 	memset(intram, 0, sizeof(intram));
 	internal_ram = (unsigned char *)&intram[0];
-	
+
 	memset(hiram, 0, sizeof(hiram));
 	bank_sixteen = &hiram[0];
 
@@ -115,13 +115,13 @@ int initialize_memory()
 
 	install_memory(0x0A, NULL);	/* 8 Kilobyte Switchable RAM */
 	install_memory(0x0B, NULL);
-	
+
 	install_memory(0x0C, internal_ram + 0x0000);	/* This is ok for both GB and GBC */
 	install_memory(0x0D, internal_ram + 0x1000);
 	install_memory(0x0E, internal_ram + 0x0000);	/* Echo of Internal Ram */
 
 	install_memory(0x0F, bank_sixteen);
-	
+
 	sprite_oam = &gameboy_memory[0xF][0xE00];
 
 	reset_colors();
@@ -145,7 +145,7 @@ void free_memory()
 		install_memory(0xF, NULL);
 		bank_sixteen = (unsigned char *)NULL;
 	}
-	sprite_oam = (unsigned char *)NULL;	
+	sprite_oam = (unsigned char *)NULL;
 }
 
 /*inline */int memory_read_hibyte(int reg)
@@ -156,7 +156,7 @@ void free_memory()
 				return ((~current_joypad & 0xF0) >> 4) | 0x10;
 			} else if(!(JOYPAD & 0x10)) {
 				return (~current_joypad & 0x0F) | 0x20;
-			} 
+			}
 			return 0xFF;
 		case 0x10:
 		case 0x11:
@@ -203,7 +203,7 @@ void free_memory()
 			}
 			return SoundRead(reg);
 		case 0x41:
-			return (LCDSTAT & 0xF8) | vram_mode | ((CURLINE == CMPLINE) ? 4 : 0);
+			return (LCDSTAT & 0xF8) | gbMode | ((CURLINE == CMPLINE) ? 4 : 0);
 		case 0x55:
 			return HDMACnt - 1; /* TODO: ??? */
 		case 0x69: {
@@ -222,7 +222,7 @@ void free_memory()
 				value = (bkg_palettes[pal][col] & 0x00FF);
 			}
 			return value;
-		}	
+		}
 		case 0x6B: {
 			unsigned char pal;
 			unsigned char col;
@@ -282,7 +282,7 @@ void free_memory()
 			//printf("TIM hit -> %02X\n", value);
 			return;
 		}
-		
+
 		case 0x10:
 		case 0x11:
 		case 0x12:
@@ -324,7 +324,7 @@ void free_memory()
 				SoundWrite((unsigned char)reg, (unsigned char)value);
 			else
 				hiram[reg | 0xF00] = value;
-			return;	
+			return;
 		case 0x40: {
 			extern int TileSign;
 			extern unsigned char *BkgTiles;
@@ -336,7 +336,7 @@ void free_memory()
 			} else {
 				BkgTable = &video_ram[0x1800]; //printf("passage %x ",video_ram[0x1800]);
 			}
-			
+
 			if (value & 0x10) {
 				TileSign = 0;
 				BkgTiles = &video_ram[0];
@@ -354,10 +354,10 @@ void free_memory()
 				/* warning */
 				LCDCONT = value;
 			} else if (!(LCDCONT & 0x80) && (value & 0x80)) {
-				extern int vram_mode;
+				extern int gbMode;
 				extern int ScrCycle;
 				CURLINE = 154;
-				vram_mode = 1;
+				gbMode = 1;
 				ScrCycle = 0;
 				LCDCONT = value;
 			} else {
@@ -372,7 +372,7 @@ void free_memory()
 			extern int ScrCycle;
 			printf("wrote %d to LY?\n", value);
 			ScrCycle = 0;
-			vram_mode = 1;
+			gbMode = 1;
 			CURLINE = 154;
 			return;
 		}
@@ -381,7 +381,7 @@ void free_memory()
 			DMACONT = value;
 			a = (DMACONT << 8) & 0xFFF;
 			b = DMACONT >> 4;
-                
+
 			if(gameboy_memory[b])
 				memcpy(sprite_oam, &gameboy_memory[b][a], 0xA0);
 			return;
@@ -398,18 +398,18 @@ void free_memory()
 
 			src = (HDMA1REG << 8) | (HDMA2REG & 0xF0);
 			dest = 0x8000 | ((HDMA3REG & 0x1F) << 8) | ((HDMA4REG & 0xF0));
-			if (value & 0x80) {				
-				if (HDMADst) 
+			if (value & 0x80) {
+				if (HDMADst)
 					break;
 				HDMASrc = src;
-				HDMADst = dest;	
+				HDMADst = dest;
 				HDMACnt = (value & 0x7F) + 1;
-				
+
 				//printf("HDMA5: %X (%d lines) Bytes From %X to %X\n", ((value & 0x7F) + 1) << 4, (value & 0x7F) + 1, src, dest);
 			} else {
 				//printf("GDMA5: %X Bytes From %X to %X\n", ((value & 0x7F) + 1) << 4, src, dest);
 				cntr = ((value & 0x7F) + 1) << 4;
-				MORE_CYCLES( ((1845 + (cntr << 3)) >> 4) );
+				//MORE_CYCLES( ((1845 + (cntr << 3)) >> 4) );
 				memcpy(&gameboy_memory[dest >> 12][dest & 0x0FFF], &gameboy_memory[(src & 0xF000) >> 12][src & 0x0FFF], cntr);
 			}
 			return;
@@ -470,14 +470,14 @@ void free_memory()
 		}
 		case 0x70:
 			SVBKREG = value & 0x07;
-			memory_select_wram_bank(SVBKREG, 0x0D);	
+			memory_select_wram_bank(SVBKREG, 0x0D);
 			return;
 		default:
 			hiram[reg | 0xF00] = value;
 			return;
-	}		
+	}
 }
-			
+
 /*
 TODO:
  memory_read_byte undefined when inline on win32
@@ -486,9 +486,9 @@ TODO:
 unsigned char memory_read_byte(unsigned short int address)
 {
 	int where, bank;
-	
+
 	bank = address >> 12;
-	
+
 	switch(bank) {
 		case 0x00:
 		case 0x01:
@@ -510,13 +510,13 @@ unsigned char memory_read_byte(unsigned short int address)
                if ( HuC3_RAMFlag > 0x0B && HuC3_RAMFlag < 0x0E) {
                   if ( HuC3_RAMFlag != 0x0C )
                      return 1;
-                     
+
                   return HuC3_RAMValue;
                } else {
                   return gameboy_memory[bank][address & 0x0FFF];
                }
                break;
-               
+
             case TYPE_ROM_MBC3_TIMER_BATTERY:
             case TYPE_ROM_MBC3_TIMER_RAM_BATTERY:
                // KarasQ: fixed read from RAM for RTC
@@ -524,7 +524,7 @@ unsigned char memory_read_byte(unsigned short int address)
                   if ( RTC.RAMBank != -1 ) {
                      return gameboy_memory[bank][address & 0x0FFF];
                   }
-                  
+
                   switch ( RTC.ClockRegister ) {
                      case 0x08: return RTC.LSeconds; break;
                      case 0x09: return RTC.LMinutes; break;
@@ -540,8 +540,8 @@ unsigned char memory_read_byte(unsigned short int address)
                if ( mbc1_ram_bank_enable == 0 ) {
                   //printf("Ignoring read..\n");
                   return 0;
-               } 
-               return gameboy_memory[bank][address & 0x0FFF]; 
+               }
+               return gameboy_memory[bank][address & 0x0FFF];
          }
          return 0;
 		case 0x0C:
@@ -554,7 +554,7 @@ unsigned char memory_read_byte(unsigned short int address)
 			where = address & 0x0FFF;
 
 			if (where >= 0xF00) {
-				return memory_read_hibyte(where & 0xFF);	
+				return memory_read_hibyte(where & 0xFF);
 			} else if (where >= 0xEA0) {
 				return hiram[where];
 			} else if (where >= 0xE00) {
@@ -575,7 +575,7 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 	int bank, where;
 
 	bank = address >> 12;
-	
+
 	switch(bank) {
 		case 0x00:
 		case 0x01:
@@ -620,7 +620,7 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 					} else {
 						cartridge_mbc1 = MBC1_16M_8K;
 					}
-				} 
+				}
 			} else if(cartridge_type == TYPE_ROM_MBC2 || cartridge_type == TYPE_ROM_MBC2_BATTERY) {
 				int ual = address >> 8;	/* Upper Address Line */
 				if(address < 0x2000) {
@@ -629,9 +629,9 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 						mbc1_ram_bank_enable = !mbc1_ram_bank_enable;
 					}
 				} else if(address < 0x3000) {
-					if(ual & 0x01) 
+					if(ual & 0x01)
 						rom_select_bank(value & 0x0F, 4);
-				} 
+				}
 			} else if(cartridge_type >= TYPE_ROM_MBC3 && cartridge_type <= TYPE_ROM_MBC3_TIMER_RAM_BATTERY ) { // KarasQ: UPDATED new cartridge type
 				// KarasQ: fixed MBC3 - battery-backup and implemeted RTC
 				switch ( address & 0x6000 ) {
@@ -661,14 +661,14 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                case 0x6000: // Clock latch
                   if ( RTC.ClockLatch == 0 && value == 1 ) {
                      UpdateClockData(&RTC);
-                     
+
                      RTC.LSeconds = RTC.Seconds;
                      RTC.LMinutes = RTC.Minutes;
                      RTC.LHours   = RTC.Hours;
                      RTC.LDays    = RTC.Days;
                      RTC.LControl = RTC.Control;
                   }
-                  
+
                   if ( value == 0x00 || value == 0x01 )
                      RTC.ClockLatch = value;
                   break;
@@ -721,7 +721,7 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 			switch ( cartridge_type ) {
             case TYPE_ROM_HUDSON_HUC3:
                int *p;
-               
+
                if ( HuC3_RAMFlag < 0x0B || HuC3_RAMFlag > 0x0E ) {
                   if ( mbc1_ram_bank_enable ) {
                      gameboy_memory[bank][address & 0x0FFF] = value;
@@ -735,18 +735,18 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                            case 0x10:
                               p = &HuC3_Reg[1];
                               HuC3_RAMValue = *(p + HuC3_Reg[0]++);
-                              
+
                               if ( HuC3_Reg[0] > 6 )
                                  HuC3_Reg[0] = 0;
-                                 
+
                               break;
                            case 0x30:
                               p = &HuC3_Reg[1];
                               *(p + HuC3_Reg[0]++) = value & 0x0f;
-                              
+
                               if ( HuC3_Reg[0] > 6 )
                                  HuC3_Reg[0] = 0;
-                                 
+
                               /* FIXME: is that need?
                                  gbDataHuC3.mapperAddress =
                                  (gbDataHuC3.mapperRegister6 << 24) |
@@ -780,7 +780,7 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                   }
                }
                break; // end case HuC3
-               
+
             case TYPE_ROM_MBC3_TIMER_BATTERY:
             case TYPE_ROM_MBC3_TIMER_RAM_BATTERY:
                // KarasQ: fixed write to RAM for RTC
@@ -812,7 +812,7 @@ void memory_write_byte(unsigned short int address, unsigned char value)
                   //printf("Ignoring write..\n");
                   return;
                }
-               gameboy_memory[bank][address & 0x0FFF] = value; 
+               gameboy_memory[bank][address & 0x0FFF] = value;
          }
          return;
 		case 0x0C:
@@ -825,17 +825,17 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 			return;
 		case 0x0F:
 			where = address & 0x0FFF;
-			
+
 			if(where >= 0xF00) {
 				memory_write_hibyte(where & 0x0FF, value);
-			} else if(where >= 0xEA0) {		
+			} else if(where >= 0xEA0) {
 				/* TODO: Is this correct? */
 				if (((where & 0x0FF7)+24) >= 0x0F00) {
-					if (((where & 0x0FE7)+24) >= 0x0F00) 
+					if (((where & 0x0FE7)+24) >= 0x0F00)
 						printf("OVERWRITING REGISTERS!!! (%04X)\n", 0xF000 | where);
 				}
-				hiram[(where & 0x0FE7)] = 
-				hiram[(where & 0x0FE7)+8] = 
+				hiram[(where & 0x0FE7)] =
+				hiram[(where & 0x0FE7)+8] =
 				hiram[(where & 0x0FE7)+16] =
 				hiram[(where & 0x0FE7)+24] = value;
 			} else if(where >= 0xE00) {
@@ -845,8 +845,8 @@ void memory_write_byte(unsigned short int address, unsigned char value)
 				hiram[where] = value;
 			}
 			return;
-	}	
-			
+	}
+
 }
 
 void memory_write_word(unsigned short int address, unsigned short int value)

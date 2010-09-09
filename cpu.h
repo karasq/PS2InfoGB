@@ -25,25 +25,32 @@
 
 #include "data.h"
 
+// CPU Interrupts flags
+#define INT_VBL	0x01
+#define INT_LCD	0x02
+#define INT_TIM	0x04
+#define INT_SIO	0x08
+#define INT_JOY	0x10
+
+// CPU Flags
 #define FLAGS_ZERO      0x80
 #define FLAGS_NEGATIVE  0x40
 #define FLAGS_HALFCARRY 0x20
 #define FLAGS_CARRY     0x10
 
-#define FLAGS_ISZERO(proc)      (gbz80.AF.b.l & FLAGS_ZERO)
-#define FLAGS_ISNEGATIVE(proc)  (gbz80.AF.b.l & FLAGS_NEGATIVE)
-#define FLAGS_ISCARRY(proc)     (gbz80.AF.b.l & FLAGS_CARRY)
-#define FLAGS_ISHALFCARRY(proc) (gbz80.AF.b.l& FLAGS_HALFCARRY)
+// Macros
+#define FLAGS_ISZERO(proc)       (gbz80.AF.b.l & FLAGS_ZERO)
+#define FLAGS_ISNEGATIVE(proc)   (gbz80.AF.b.l & FLAGS_NEGATIVE)
+#define FLAGS_ISCARRY(proc)      (gbz80.AF.b.l & FLAGS_CARRY)
+#define FLAGS_ISHALFCARRY(proc)  (gbz80.AF.b.l & FLAGS_HALFCARRY)
 
-#define FLAGS_SET(proc,x)       (gbz80.AF.b.l |= x)
-#define FLAGS_ISSET(proc,x)     (gbz80.AF.b.l & x)
-#define FLAGS_CLEAR(proc,x)     (gbz80.AF.b.l &= ~(x))
+#define FLAGS_SET(proc, x)       (gbz80.AF.b.l |= x)
+#define FLAGS_ISSET(proc, x)     (gbz80.AF.b.l & x)
+#define FLAGS_CLEAR(proc, x)     (gbz80.AF.b.l &= ~(x))
 
-#define MORE_CYCLES(m) { /*gbz80.machine_cycles += m; */}
-//#define MORE_CYCLES2(m) { gbz80.machine_cycles += m; }
-
+//
 typedef struct _gameboy_proc_t {
-	wordun   AF;	
+	wordun   AF;
 	wordun 	BC;
 	wordun   DE;
 	wordun   HL;
@@ -62,12 +69,14 @@ extern "C" {
 #endif
    void gameboy_cpu_hardreset();
    void gameboy_cpu_run();
-   bool gameboy_read_state();
-   bool gameboy_save_state();
 #ifdef __cplusplus
 }
 #endif
 void gameboy_cpu_execute_opcode(unsigned char OpCode);
 void gameboy_update();
 
+bool gameboy_read_state();
+bool gameboy_save_state();
+
+#define MORE_CYCLES(X) {}
 #endif

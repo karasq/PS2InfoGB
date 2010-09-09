@@ -19,6 +19,7 @@
  *  based on gbe - gameboy emulator
  *  Copyright (C) 1999  Chuck Mason, Steven Fuller, Jeff Miller
  */
+
 #include <stdio.h>
 
 #include "system.h"
@@ -26,28 +27,41 @@
 #include "system.h"
 #include "sound.h"
 #include "mem.h"
+#include "regs.h"
 
-//void WriteSample(short int l, short int r);
+extern unsigned char Sev[];
+extern unsigned char Fif[];
 
 int SoundCycle = 0;
 
 #ifdef AMIGA
 int SoundLoader = 4194304/22050;
 #else
-int SoundLoader = 4194304/48000;//44100
+const int SoundLoader = 4194304/44100;
 #endif
 int SoundEnabled = 1;
 
 int sq[4][8] = {
-{1, 0, 0, 0, 0, 0, 0, 0},
-{1, 1, 0, 0, 0, 0, 0, 0},
-{1, 1, 1, 1, 0, 0, 0, 0},
-{1, 1, 1, 1, 1, 1, 0, 0}
+   {1, 0, 0, 0, 0, 0, 0, 0},
+   {1, 1, 0, 0, 0, 0, 0, 0},
+   {1, 1, 1, 1, 0, 0, 0, 0},
+   {1, 1, 1, 1, 1, 1, 0, 0}
 };
 
-/* Initialize to 0x00FF x 8 */
-int wavram[32] = { 
-0x8000, 0x8000, 0x7000, 0x7000, 0x8000, 0x8000, 0x7000, 0x7000, 
+static const int freqtab[8] = {
+	524288*2,
+	524288*1,
+	524288/2,
+	524288/3,
+	524288/4,
+	524288/5,
+	524288/6,
+	524288/7
+};
+
+// Initialize to 0x00FF x 8
+int wavram[32] = {
+0x8000, 0x8000, 0x7000, 0x7000, 0x8000, 0x8000, 0x7000, 0x7000,
 0x8000, 0x8000, 0x7000, 0x7000, 0x8000, 0x8000, 0x7000, 0x7000,
 0x8000, 0x8000, 0x7000, 0x7000, 0x8000, 0x8000, 0x7000, 0x7000,
 0x8000, 0x8000, 0x7000, 0x7000, 0x8000, 0x8000, 0x7000, 0x7000
@@ -59,44 +73,45 @@ int sOn, sLeftVol, sRightVol;
 
 int s1SwTime, s1SwDir, s1SwVal, s1Wav, s1Len, s1Env, s1EnvDir, s1EnvVal,
     s1Freq, s1Cont, s1FCyc, s1LCyc, s1Play, s1Left, s1Right, s1SCyc, s1ECyc;
-int s2Wav, s2Len, s2Env, s2EnvDir, s2EnvVal, s2Freq, s2Cont, s2FCyc, 
-    s2LCyc, s2Play, s2Left, s2Right, s2ECyc;    
-int s3On, s3Len, s3Vol, s3Freq, s3Play, s3Cont, s3FCyc, s3LCyc, 
+
+int s2Wav, s2Len, s2Env, s2EnvDir, s2EnvVal, s2Freq, s2Cont, s2FCyc,
+    s2LCyc, s2Play, s2Left, s2Right, s2ECyc;
+
+int s3On, s3Len, s3Vol, s3Freq, s3Play, s3Cont, s3FCyc, s3LCyc,
     s3Left, s3Right;
-int s4Play, s4Left, s4Right, s4Len, s4Env, s4EnvDir, s4EnvVal, s4Shift, s4Step, 
+
+int s4Play, s4Left, s4Right, s4Len, s4Env, s4EnvDir, s4EnvVal, s4Shift, s4Step,
     s4Div, s4Cont, s4ECyc, s4LCyc, s4FCyc, s4Bit, s4Freq, s4Pos;
 
-int VolHack = 1;
+int VolHack = 0;
 
-#include "noise.cpp"
+//short int voltab[16] = { 0, 0x0100, 0x0200, 0x0300, 0x0400, 0x0500, 0x0600, 0x0700,
+             //0x0800, 0x0900, 0x0A00, 0x0B00, 0x0C00, 0x0D00, 0x0E00, 0x1000 };
 
-//int voltab[16] = {0, 8, 17, 25, 34, 42, 51, 59, 68, 
-//                    76, 85, 93, 102, 110, 119, 127};
-int voltab[16] = { 0, 0x0808, 0x1111, 0x1919, 0x2222, 0x2A2A, 0x3333, 0x3B3B,
-              0x4444, 0x4C4C, 0x5555, 0x5D5D, 0x6666, 0x6E6E, 0x7777, 0x7F7F };
-//int voltab[16] = { 0, 0x0808, 0x1010, 0x1818, 0x2020, 0x2828, 0x3030, 0x3838,
-//        0x4040, 0x4848, 0x5050, 0x5858, 0x6060, 0x6868, 0x7070, 0x7878 };
+int voltab[16] = { 0, 0x0808, 0x1010, 0x1818, 0x2020, 0x2828, 0x3030, 0x3838,
+        0x4040, 0x4848, 0x5050, 0x5858, 0x6060, 0x6868, 0x7070, 0x7878 };
 
 int mainvol[8] = { 16, 14, 11, 9, 7, 5, 2, 0 };
 
 void ProcessSound(int cycles)
 {
-     int l, r, x;
+     int l, r;
      short int dat, snd = 0;
 
      cycles += slack;
-     
+
      while (cycles >= SoundLoader) {
+
           l = 0; r = 0;
           dat = 0; snd = 0;
-          
+
           if (sOn) {
                #if 1
                if (s1Play) {
-                    if (s1Freq < 2048) {
+                    if (s1Freq < 2043) {
                          dat = sq[s1Wav][(s1FCyc / (2048 - s1Freq)) >> 2];
-                         
-                         if (dat) 
+
+                         if (dat)
                               snd = voltab[s1Env];
                          else
                               snd = -voltab[s1Env];
@@ -104,14 +119,13 @@ void ProcessSound(int cycles)
                               l += snd;
                          if (s1Right)
                               r += snd;
-                    } else {
                     }
-                    
+
                     s1FCyc += SoundLoader;
                     while (s1FCyc >= 32*(2048-s1Freq)) {
                          s1FCyc -= 32*(2048-s1Freq);
                     }
-                    
+
                     if (s1SwTime && s1SwVal) {
                          s1SCyc += SoundLoader;
                          while (s1SCyc >= 32768*s1SwTime) {
@@ -129,7 +143,7 @@ void ProcessSound(int cycles)
                               }
                          }
                     }
-                                   
+
                     if (s1EnvVal) {
                          s1ECyc += SoundLoader;
                          while (s1ECyc >= s1EnvVal*(4194304/64)) {
@@ -149,7 +163,7 @@ void ProcessSound(int cycles)
                                    break;
                          }
                     }
-                                             
+
                     if (s1Cont) {
                          s1LCyc += SoundLoader;
                          while (s1LCyc >= (4194304/256)) {
@@ -165,10 +179,10 @@ void ProcessSound(int cycles)
                #endif
                #if 1
                if (s2Play) {
-                    if (s2Freq < 2048) {
-                         dat = sq[s2Wav][s2FCyc / ((2048 - s2Freq)*4)];
-                         
-                         if (dat) 
+                    if (s2Freq < 2043) {
+                         dat = sq[s2Wav][(s2FCyc / (2048 - s2Freq)) >> 2];
+
+                         if (dat)
                               snd = voltab[s2Env];
                          else
                               snd = -voltab[s2Env];
@@ -178,12 +192,12 @@ void ProcessSound(int cycles)
                               r += snd;
                     } else {
                     }
-                    
+
                     s2FCyc += SoundLoader;
                     while (s2FCyc >= 32*(2048-s2Freq)) {
                          s2FCyc -= 32*(2048-s2Freq);
                     }
-                    
+
                     if (s2EnvVal) {
                          s2ECyc += SoundLoader;
                          while (s2ECyc >= s2EnvVal*(4194304/64)) {
@@ -202,8 +216,8 @@ void ProcessSound(int cycles)
                               if (s2EnvVal == 0)
                                    break;
                          }
-                    }    
-                    
+                    }
+
                     if (s2Cont) {
                          s2LCyc += SoundLoader;
                          while (s2LCyc >= (4194304/256)) {
@@ -219,8 +233,8 @@ void ProcessSound(int cycles)
                #endif
                #if 1
                if (s3Play) {
-                    if (s3Freq < 2045) {
-                         int pos = (s3FCyc / ((2048 - s3Freq)*2));
+                    if (s3Freq < 2048) {
+                         int pos = (s3FCyc / (2048 - s3Freq)) >> 1;
                          dat = wavram[pos];
                          switch(s3Vol) {
                               case 0:
@@ -235,19 +249,19 @@ void ProcessSound(int cycles)
                                    dat >>= 2;
                                    break;
                          }
-                         
+
                          if (s3Left)
                               l += dat;
                          if (s3Right)
                               r += dat;
                     } else {
                     }
-                    
+
                     s3FCyc += SoundLoader;
                     while (s3FCyc >= 64*(2048-s3Freq)) {
                          s3FCyc -= 64*(2048-s3Freq);
                     }
-                    
+
                     if (s3Cont) {
                          s3LCyc += SoundLoader;
                          while (s3LCyc >= (4194304/256)) {
@@ -258,12 +272,14 @@ void ProcessSound(int cycles)
                                    break;
                               }
                          }
-                    }              
+                    }
+
                }
                #endif
+
                #if 1
                if (s4Play) {
-                    
+
                     if (s4Left)  {
                          if (s4Bit) {
                               l += voltab[s4Env];
@@ -278,7 +294,7 @@ void ProcessSound(int cycles)
                               r -= voltab[s4Env];
                          }
                     }
-                    
+
                     s4FCyc += SoundLoader;
                     while (s4FCyc >= s4Freq) {
                          s4Pos++;
@@ -291,7 +307,7 @@ void ProcessSound(int cycles)
                          }
                          s4FCyc -= s4Freq;
                     }
-                    
+
                     if (s4EnvVal) {
                          s4ECyc += SoundLoader;
                          while (s4ECyc >= s4EnvVal*(4194304/64)) {
@@ -311,7 +327,7 @@ void ProcessSound(int cycles)
                                    break;
                          }
                     }
-                    
+
                     if (s4Cont) {
                          s4LCyc += SoundLoader;
                          while (s4LCyc >= (4194304/256)) {
@@ -326,43 +342,56 @@ void ProcessSound(int cycles)
                }
                #endif
           }
-                    
-          l >>= 2;
-          r >>= 2;
-          
-          l >>= mainvol[sLeftVol];
-          r >>= mainvol[sRightVol];
 
-          #if 1
+          //l >>= 2;
+          //r >>= 2;
+
+          //l >>= mainvol[sLeftVol];
+          //r >>= mainvol[sRightVol];
+
+
+         l *= (SNDREG50 & 0x07);
+         r *= ((SNDREG50 & 0x70)>>4);
+
+
+          #if 0
           if (VolHack) {
-               /* Volume Hack! */
+               // Volume Hack!
                x = (sLeftVol << 13) - 32768;
                l += x >> 1;
                x = (sRightVol << 13) - 32768;
                r += x >> 1;
           }
           #endif
-          
+
+         l >>= 4;
+         r >>= 4;
+
+          #if 1
           if (l > 32767)
                l = 32767;
           else if (l < -32768)
                l = -32768;
+
           if (r > 32767)
                r = 32767;
           else if (r < -32768)
                r = -32768;
+         #endif
 
           infogb_write_sample(l, r);
           cycles -= SoundLoader;
      }
-     slack = cycles;     
+
+     slack = cycles;
 }
 
 void SoundWrite(unsigned char reg, unsigned char v)
 {
      int x = v;
-     
+
      //printf("reg write = %02X <- %02X\n", reg, v);
+
      switch(reg) {
           case 0x10:
                s1SwTime = (v & 0x70) >> 4;
@@ -388,27 +417,27 @@ void SoundWrite(unsigned char reg, unsigned char v)
                if (v & 0x80) {
                     //s1Cont = (v & 0x40) ? 1 : 0;
                     //s1Freq = ((v & 0x07) << 8) | hiram[0xF13];
-                    
+
                     s1Play = 1;
-                    
+
                     s1FCyc = 0;
                     s1LCyc = 0;
                     s1ECyc = 0;
                     s1SCyc = 0;
-                    
+
                     //s1SwTime     = (hiram[0xF10] & 0x70) >> 4;
                     //s1SwDir      = (hiram[0xF10] & 0x08) ? 1 : 0;
                     //s1SwVal      = (hiram[0xF10] & 0x07);
-                    
+
                     //s1Wav        = (hiram[0xF11] & 0xC0) >> 6;
                     //s1Len        = (hiram[0xF11] & 0x3F);
-                    
+
                     s1Env          = (hiram[0xF12] & 0xF0) >> 4;
                     s1EnvDir  = (hiram[0xF12] & 0x08) ? 1 : 0;
                     s1EnvVal  = (hiram[0xF12] & 0x07);
                }
                break;
-          
+
           case 0x16:
                s2Wav = (v & 0xC0) >> 6;
                s2Len = (v & 0x3F);
@@ -428,30 +457,30 @@ void SoundWrite(unsigned char reg, unsigned char v)
                if (v & 0x80) {
                     //s2Freq = (s2Freq & 0x0FF) | ((v & 0x07) << 8);
                     //s2Cont = (v & 0x40) ? 1 : 0;
-                    
+
                     s2Play = 1;
-                    
+
                     s2FCyc = 0;
                     s2LCyc = 0;
                     s2ECyc = 0;
-                    
+
                     //s2Wav        = (hiram[0xF16] & 0xC0) >> 6;
                     //s2Len        = (hiram[0xF16] & 0x3F);
-                    
+
                     s2Env          = (hiram[0xF17] & 0xF0) >> 4;
                     s2EnvDir  = (hiram[0xF17] & 0x08) ? 1 : 0;
                     s2EnvVal  = (hiram[0xF17] & 0x07);
                }
                break;
-               
+
           case 0x1A:
                if (v & 0x80)
                     s3On = 1;
                else {
                     s3On = 0;
                     s3Play = 0;
-               }    
-               break;         
+               }
+               break;
           case 0x1B:
                s3Len = v;
                break;
@@ -465,7 +494,7 @@ void SoundWrite(unsigned char reg, unsigned char v)
                //printf("hit 3 %02X\n", v);
                s3Freq = (s3Freq & 0x0FF) | ((v & 0x07) << 8);
                s3Cont = (v & 0x40) ? 1 : 0;
-               if ((v & 0x80) && s3On) { /* TODO: check */
+               if ((v & 0x80) && s3On) { // TODO: check
                     s3Play = 1;
                     //s3Len = hiram[0xF1B];
                     s3LCyc = 0;
@@ -475,7 +504,7 @@ void SoundWrite(unsigned char reg, unsigned char v)
 
           case 0x20:
                s4Len = v & 0x3F;
-               break; 
+               break;
           case 0x21:
                s4Env = (v & 0xF0) >> 4;
                s4EnvDir = (v & 0x08) ? 1 : 0;
@@ -486,8 +515,13 @@ void SoundWrite(unsigned char reg, unsigned char v)
                s4Step = (v & 0x08) ? 1 : 0;
                s4Div = (v & 0x07);
 
+            #if 1
+               s4Freq = freqtab[s4Div] >> (s4Shift+1);
+               s4Freq = 4194304 / s4Freq;
+
+            #else
                switch(s4Div) {
-                    /* 524288 = (4194304 / 2^3) */
+                    // 524288 = (4194304 / 2^3)
                     case 0: s4Freq = (524288*2); break;
                     case 1: s4Freq = (524288*1); break;
                     case 2: s4Freq = (524288/2); break;
@@ -495,10 +529,12 @@ void SoundWrite(unsigned char reg, unsigned char v)
                     case 4: s4Freq = (524288/4); break;
                     case 5: s4Freq = (524288/5); break;
                     case 6: s4Freq = (524288/6); break;
-                    case 7: s4Freq = (524288/7); break;                    
+                    case 7: s4Freq = (524288/7); break;
                }
                s4Freq >>= (s4Shift+1);
                s4Freq = 4194304 / s4Freq;
+            #endif
+               //printf("fq: %i\n", s4Freq);
                break;
           case 0x23:
                //printf("hit 4 %02X\n", v);
@@ -511,9 +547,9 @@ void SoundWrite(unsigned char reg, unsigned char v)
                     //s4Env = (hiram[0xF21] & 0xF0) >> 4;
                     //s4EnvVal = (hiram[0xF21] & 0x07);
                     s4FCyc = 0;
-               }    
+               }
                break;
-               
+
           case 0x24:
                sLeftVol = (v & 0x07);
                sRightVol = (v & 0x70) >> 4;
@@ -582,7 +618,7 @@ void SoundWrite(unsigned char reg, unsigned char v)
 unsigned char SoundRead(int reg)
 {
      int i;
-     
+
      //printf("reg read  = %02X -> %02X\n", reg, hiram[reg | 0xF00]);
      switch(reg) {
           case 0x26:
@@ -595,6 +631,6 @@ unsigned char SoundRead(int reg)
                     i |= s4Play ? 0x08 : 0x00;
                }
                return i;
-     }    
+     }
      return hiram[reg | 0xF00];
 }

@@ -24,7 +24,7 @@
 #define __SOUND_H__
 
 extern int SoundCycle;
-extern int SoundLoader;
+extern const int SoundLoader;
 extern int SoundEnabled;
 
 extern void ProcessSound(int cycles);

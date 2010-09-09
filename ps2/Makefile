@@ -23,16 +23,16 @@ EE_CFLAGS 	= $(EE_CXXFLAGS)
 EE_LIBS += -lgcc -lstdc++ -lmc -lpad -lfileXio -lpatches
 
 # additional libs
-EE_LIBS += -lcdvdfs -lunzlib -lz -lcdvd
+EE_LIBS += -lcdvdfs -lunzlib -lz -lcdvd -laudsrv
 
 # IRX modules - modules have to be in IRX_DIR
-EE_IRX = cdvd.irx usbd.irx usbhdfsd.irx sjpcm.irx fakehost.irx
+EE_IRX = cdvd.irx usbd.irx usbhdfsd.irx audsrv.irx fakehost.irx
 EE_IRX_OBJ = $(EE_IRX:.irx=.o)
 
 # Objects
 EE_OBJS  = $(EE_IRX_OBJ)
-EE_OBJS += ./../mem.o ./../cpu.o ./../joypad.o ./../rom.o ./../globals.o ./../sound.o ./../vram.o ./../RTC.o \
-	     ./hw.o ./gs.o ./sjpcm_rpc.o ./fontmsx.o ./gfxpipe/gfxpipe.o \
+EE_OBJS += ./../daa.o ./../mem.o ./../cpu.o ./../joypad.o ./../rom.o ./../globals.o ./../sound.o ./../vram.o ./../RTC.o ./../noise.o \
+	     ./hw.o ./gs.o ./fontmsx.o ./gfxpipe/gfxpipe.o \
 	     ./PS2Print.o ./PS2Input.o ./PS2Init.o ./PS2GUI.o ./PS2InfoGB.o ./PS2Time.o ./PS2Browser.o ./Reboot_ELF.o\
 	     ./loader.o
 

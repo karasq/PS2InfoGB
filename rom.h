@@ -24,25 +24,38 @@
 #define __ROM_H__
 
 typedef enum _cartsize { SIZE_Unknown = 0, SIZE_32k, SIZE_64k, SIZE_128k, SIZE_256k, SIZE_512k, SIZE_1M, SIZE_2M, SIZE_4M, SIZE_8M } cartsize;
-typedef enum _carttype { TYPE_Unknown = 0, 
-                         TYPE_ROM_Only, 
-                         TYPE_ROM_MBC1, 
-                         TYPE_ROM_MBC1_RAM,
-                         TYPE_ROM_MBC1_RAM_BATTERY,
-                         TYPE_ROM_MBC2,
-                         TYPE_ROM_MBC2_BATTERY,
-                         TYPE_ROM_MBC3,
-                         TYPE_ROM_MBC3_RAM,
-                         TYPE_ROM_MBC3_RAM_BATTERY,
-                         TYPE_ROM_MBC3_TIMER_BATTERY,     // KarasQ: New cartridge type
-                         TYPE_ROM_MBC3_TIMER_RAM_BATTERY, // KarasQ: New cartridge type
-                         TYPE_ROM_MBC5,
-                         TYPE_ROM_MBC5_RAM,
-                         TYPE_ROM_MBC5_RAM_BATTERY,
-                         TYPE_ROM_HUDSON_HUC3             // KarasQ: New cartridge type
-                         } carttype;
-typedef enum _mbc1type { MBC1_Unused  = 0, MBC1_16M_8K, MBC1_4M_32K } mbc1type;
-typedef enum _ramsize  { RAM_SIZE_2KB = 1, RAM_SIZE_8KB, RAM_SIZE_32KB, RAM_SIZE_128KB = 6 } ramsize;
+typedef enum _carttype {
+   TYPE_Unknown = 0,
+   TYPE_ROM_Only,
+   TYPE_ROM_MBC1,
+   TYPE_ROM_MBC1_RAM,
+   TYPE_ROM_MBC1_RAM_BATTERY,
+   TYPE_ROM_MBC2,
+   TYPE_ROM_MBC2_BATTERY,
+   TYPE_ROM_MBC3,
+   TYPE_ROM_MBC3_RAM,
+   TYPE_ROM_MBC3_RAM_BATTERY,
+   TYPE_ROM_MBC3_TIMER_BATTERY,     // KarasQ: New cartridge type
+   TYPE_ROM_MBC3_TIMER_RAM_BATTERY, // KarasQ: New cartridge type
+   TYPE_ROM_MBC5,
+   TYPE_ROM_MBC5_RAM,
+   TYPE_ROM_MBC5_RAM_BATTERY,
+   TYPE_ROM_HUDSON_HUC3             // KarasQ: New cartridge type
+} carttype;
+
+typedef enum _mbc1type {
+   MBC1_Unused  = 0,
+   MBC1_16M_8K,
+   MBC1_4M_32K
+} mbc1type;
+
+typedef enum _ramsize  {
+   RAM_SIZE_2KB = 1,
+   RAM_SIZE_8KB,
+   RAM_SIZE_32KB,
+   RAM_SIZE_64KB = 5, // KarasQ: new 64K RAM size support
+   RAM_SIZE_128KB = 6
+} ramsize;
 
 extern int color_gameboy;
 extern int super_gameboy;
