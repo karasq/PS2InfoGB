@@ -1,7 +1,7 @@
 //#include "globals.h"
 
 // CPU Globals
-int g_CycleTargetSGB = (int)(8388608 / 61.17);
+int g_CycleTargetSGB = (int)(4295454 / 61.17);
 int g_CycleTargetGB = (int)(4194304 / 59.73);
 int g_CycleTarget = g_CycleTargetGB;
 

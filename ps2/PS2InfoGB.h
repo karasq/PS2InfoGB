@@ -18,6 +18,7 @@
 extern short int *g_SndBuff;
 extern int g_SndSample;
 extern int g_SndSampler;
+extern int g_SamplePos;
 
 // Graphic
 extern int g_ShowFPS;   // 1 - show FPS on, 0 - ... off

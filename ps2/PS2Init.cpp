@@ -168,7 +168,7 @@ void PS2_Init(void)
    CDVD_Init();
 
    // Sound init
-   g_SndBuff = (short int *)malloc(sizeof(short int)*g_SndSampler*2 * 2);
+   g_SndBuff = (short int *)malloc(sizeof(short int)*g_SndSampler*2*2);
 
    for ( i = 0; i < g_SndSampler*4; i++ )
       g_SndBuff[i] = 0;

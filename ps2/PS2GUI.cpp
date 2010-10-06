@@ -136,7 +136,7 @@ void DisplayIntroBox(const char *StrMsg)
 
       textCpixel(0, 320, 80, GS_SET_RGBA(255, 255, 255, 255), 0, 0, 4, StrMsg);
       textCpixel(0, 320, 80+18+8, GS_SET_RGBA(255, 255, 255, 255), 0, 0, 4,
-         "InfoGB by 'dlanor' & 'KarasQ' rev.6b");
+         "InfoGB by 'dlanor' & 'KarasQ' rev.6c");
       textCpixel(0, 320, 80+36+18, GS_SET_RGBA(255, 255, 255, 255), 0, 0, 4,
          "based on InfoGB by Jay'Factory");
       textCpixel(0, 320, 80+72, GS_SET_RGBA(255, 255, 255, 255), 0, 0, 4,
@@ -372,12 +372,17 @@ void MenuOptions() {
                case 2:
                   ScreenAdjustment(false);
                   break;
+               case 4:
+                  g_BntCnf.turbo_on ^= 1;
+
+                  if ( !g_BntCnf.turbo_on ) { // button config will run if ON
+                     PS2_SaveButtonsConfig(ButtonsConfigPath);
+                     break;
+                  }
                case 3:
                   ConfigButtons();
                   PS2_SaveButtonsConfig(ButtonsConfigPath);
                   break;
-               case 4:
-                  g_BntCnf.turbo_on ^= 1;
                case 5:
                   g_ShowFPS ^= 1;
                   break;
@@ -421,7 +426,7 @@ void MenuOptions() {
  * the screen!
  */
 
-#define MENU_ENTRIES 12
+#define MENU_ENTRIES 10
 
 // Calculate Y pos
 #define CALC_OFFSET_Y1(NumEntries, ScrnH) ((ScrnH-(NumEntries*15))/2)
@@ -477,30 +482,30 @@ void MenuIngame()
       TextOutC2(0, 320, POSY(3), temp, Z_SCROLL);
 
       TextOutC2(0, 320, POSY(4), "Reset Gameboy", Z_SCROLL);
-      TextOutC2(0, 320, POSY(5), "Save CNF", Z_SCROLL);
-      TextOutC2(0, 320, POSY(6), "Load CNF", Z_SCROLL);
+      //TextOutC2(0, 320, POSY(5), "Save CNF", Z_SCROLL);
+      //TextOutC2(0, 320, POSY(6), "Load CNF", Z_SCROLL);
 
       // Sound
       if ( SoundEnabled ) {
-         TextOutC2(0, 320, POSY(7), "Sound: On", Z_SCROLL);
+         TextOutC2(0, 320, POSY(5), "Sound: On", Z_SCROLL);
       } else {
-         TextOutC2(0, 320, POSY(7), "Sound: Off", Z_SCROLL);
+         TextOutC2(0, 320, POSY(5), "Sound: Off", Z_SCROLL);
       }
 
       // Stretch
       if ( g_Stretch == 1 ) {
-         TextOutC2(0, 320, POSY(8), "Stretch: X 1.5", Z_SCROLL);
+         TextOutC2(0, 320, POSY(6), "Stretch: X 1.5", Z_SCROLL);
       } else if ( g_Stretch == 2 ) {
-         TextOutC2(0, 320, POSY(8), "Stretch: X 2", Z_SCROLL);
+         TextOutC2(0, 320, POSY(6), "Stretch: X 2", Z_SCROLL);
       } else {
-         TextOutC2(0, 320, POSY(8), "Stretch: Off", Z_SCROLL);
+         TextOutC2(0, 320, POSY(6), "Stretch: Off", Z_SCROLL);
       }
 
       // Filter On/Off
       if ( g_Filter ) {
-			TextOutC2(0, 320, POSY(9), "Filter: On", Z_SCROLL);
+			TextOutC2(0, 320, POSY(7), "Filter: On", Z_SCROLL);
       } else {
-         TextOutC2(0, 320, POSY(9), "Filter: Off", Z_SCROLL);
+         TextOutC2(0, 320, POSY(7), "Filter: Off", Z_SCROLL);
       }
 
       if ( strlen(boot_ELF) == 0 ) {
@@ -512,13 +517,13 @@ void MenuIngame()
       }
 
       if ( strcmp(g_FilePath, auto_ROM) ) {
-         TextOutC2(0, 320, POSY(10), "Preselect this ROM", Z_SCROLL);
+         TextOutC2(0, 320, POSY(8), "Preselect this ROM", Z_SCROLL);
       } else {
-         TextOutC2(0, 320, POSY(10), "This ROM is preselected", Z_SCROLL);
+         TextOutC2(0, 320, POSY(8), "This ROM is preselected", Z_SCROLL);
       }
 
-      TextOutC2(0, 320, POSY(11), temp, Z_SCROLL);
-      TextOutC2(0, 320, POSY(12), "Back to the main menu", Z_SCROLL);
+      TextOutC2(0, 320, POSY(9), temp, Z_SCROLL);
+      TextOutC2(0, 320, POSY(10), "Back to the main menu", Z_SCROLL);
 
       UpdateDrawing();
 
@@ -547,9 +552,7 @@ void MenuIngame()
                   gameboy_cpu_run();
                   EndMenu = 1;
                   break;
-               case 5: Save_CNF(ConfigPath); break;
-               case 6: Load_CNF(ConfigPath); break;
-               case 7:
+               case 5:
                   SoundEnabled ^= 1;
                   CNF_edited |= 1;
 
@@ -560,24 +563,27 @@ void MenuIngame()
                      audsrv_set_volume(MIN_VOLUME);
 
                   break;
-               case 8:
+               case 6:
                   if ( ++g_Stretch > 2) {
                      g_Stretch = 0;
                   }
+                  CNF_edited |= 1;
                   break;
-               case 9: g_Filter ^= 1; CNF_edited |= 1; break;
-               case 10:
+               case 7: g_Filter ^= 1; CNF_edited |= 1; break;
+               case 8:
                   if ( strcmp(g_FilePath, auto_ROM) ) {
                      strcpy(auto_ROM, g_FilePath);
+                     CNF_edited |= 1;
                   }
                   break;
-               case 11:
+               case 9:
                   if ( strlen(boot_ELF) ) {
                      infogb_close();
+                     Save_CNF(ConfigPath);
                      RunELF(boot_ELF);
                   }
                   break;
-               case 12: endflag = 1; return;
+               case 10: endflag = 1; return;
             }
 
             break;
@@ -589,14 +595,19 @@ void MenuIngame()
             break;
       }
    } while ( EndMenu != 1 );
+
+   if ( CNF_edited ) {
+      Save_CNF(ConfigPath);
+      CNF_edited = false;
+   }
 }
 
 /////////////////////////////////////////////////////////////
 void MenuBrowser() {
    int Action = 0;
 
-   int numEntryA, numEntryB, numSum,
-       Entry = 0, OffsetY = 0;
+   int numEntryA, numEntryB, numSum;
+   static int Entry = 0, OffsetY = 0;
 
    int DrawY = 0, DrawX = (int)g_PS2Browser.getCurrentDevice();
 
@@ -670,6 +681,7 @@ void MenuBrowser() {
             if ( Entry < numEntryA ) {
                // open another dir
                g_PS2Browser.setCurrentFilesPath(Entry);
+               OffsetY = Entry = 0;
             } else if ( numEntryB > 0 ) {
                // copy path to file and quit browser
                strcpy(g_FilePath, g_PS2Browser.getCurrentFilesPath());
@@ -678,7 +690,6 @@ void MenuBrowser() {
 
                return;
             }
-            OffsetY = Entry = 0;
          break;
 
          // Return to upper dir

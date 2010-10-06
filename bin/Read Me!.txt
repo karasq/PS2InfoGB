@@ -1,15 +1,26 @@
 --------------------------- PS2InfoGB Note ---------------------------
 
-This is PS2InfoGB rev. 6b continued by KarasQ. It's based on dlanor's 
+This is PS2InfoGB rev. 6c continued by KarasQ. It's based on dlanor's 
 source of PS2InfoGB rev. 4
 
 PS2 port of InfoGB 0.5J by '7not6'
 
-Revision Date: 2010.09.26
+Revision Date: 2010.10.06
 
 ------------------------- Changes history -------------------------
 
 ==== InfoGB continued by KarasQ ====
+=> Rev.6c
+     - Fixed: No-sound issue with some ROMs
+     - Fixed: Sound buffer overloading issue
+     - Added: Ability to remember position on browser list, after back to menu
+     - Added: Possibility to run ROM with longer file name than 32 characters, if
+              save device is set to MASS
+     - Removed: Save and Load config option from ingame-menu (all configuration files
+                will be saved automatically)
+     - Changed: Turbo config on/off option. Now it will force setting
+                buttons configuration after switching to ON
+
 => Rev.6b
      - Added: Show FPS option in menu
      - Added: 64K RAM size support
@@ -199,9 +210,10 @@ Revision Date: 2010.09.26
    [*] Other notes
 
 - Please be careful with names of your ROM files and folders. They will be not longer
- than 32 characters. If you use longer file name, it may cause some problems
- like missing save game and other failures, so since this release emulator will not
- run kind of files anymore - it will let you know by show you the warning message box  
+ than 31 characters (or 64 if save device is set to MASS). If you use longer file
+ name, it may cause some problemslike missing save game and other failures, so since
+ this release emulator will not run kind of files anymore - it will let you know by 
+ show you the warning message box
 
 - In one folder you can put up to 256 files and up to 128 folders. Don't magnify
  with folder depth either!

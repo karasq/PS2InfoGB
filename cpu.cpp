@@ -21,6 +21,8 @@
  */
 
 #include <fileio.h>
+#include <audsrv.h>
+
 #include "PS2InfoGB.h"
 
 #include "system.h"
@@ -49,12 +51,12 @@ gameboy_proc_t gbz80;
 
 int HaltActive;
 
-int ScrCycle;
-int SioCycle;
-int DivCycle;
-int TimCycle;
-int JoyProbe; // Not used
-int TimLoad;
+int ScrCycle = 0;
+int SioCycle = 0;
+int DivCycle = 0;
+int TimCycle = 0;
+int JoyProbe = 0; // Not used
+int TimLoad = 0;
 
 int VblIntDelay; // Not used
 int LcdIntDelay; // not used
@@ -294,8 +296,10 @@ void gameboy_cpu_run()
 
 	if ( super_gameboy ) {
       g_CycleTarget = g_CycleTargetSGB;
+      //SoundLoader = 4295454/44100;
    } else {
       g_CycleTarget = g_CycleTargetGB;
+      //SoundLoader = 4194304/44100;
    }
 
 	while ( gbz80.running ) {
@@ -309,6 +313,16 @@ extern int DMACycles;
 
 inline void gameboy_update()
 {
+   /*
+   static int test = 0;
+
+   test++;
+
+   if (!(test % 60)) {
+      test = 0;
+      printf("1 sec, %i\n", g_CycleTarget);
+   }*/
+
    while ( g_CycleTarget > CyclesUpdate )
    {
       gbz80.machine_cycles = 0;
@@ -345,6 +359,19 @@ inline void gameboy_update()
       }
    }
 #endif
+
+   if ( SoundEnabled ) {
+      static int SndSend = 1;
+
+      if ( SndSend++ >= CPUSpeed ) {
+         audsrv_play_audio((char*)g_SndBuff, g_SamplePos<<1);
+         audsrv_wait_audio(g_SamplePos<<1);
+
+         //printf("g_SamplePos: %i, SndSend: %i, Speed: %i\n", g_SamplePos<<1, SndSend, CPUSpeed);
+         g_SamplePos = 0;
+         SndSend = 1;
+      }
+   }
 
    CyclesUpdate -= g_CycleTarget;
 }
@@ -398,11 +425,11 @@ static inline void gameboy_update_stuff(int cycles)
 
    if ( CPUSpeed == 1 ) {
       if ( SoundEnabled )  {
-         static int c = SoundLoader;
+         static int c = SoundLoader*CPUSpeed;
          c -= cycles;
          while ( c < 0 ) {
             ProcessSound(SoundLoader);
-            c += SoundLoader;
+            c += SoundLoader*CPUSpeed;
          }
       }
    }
@@ -565,7 +592,7 @@ static inline void gameboy_update_stuff(int cycles)
                      if (HDMACnt == 0)
                         HDMADst = 0;
 
-                     gbz80.machine_cycles += (204*CPUSpeed);
+                     //gbz80.machine_cycles += (204*CPUSpeed);
                   }
                }
 
@@ -2179,10 +2206,12 @@ inline void inst_stop()
 
 	if (KEY1REG & 0x80) {
 		CPUSpeed = 2;
-		//printf("Emu: Changed to Double Speed 8.4 MHz\n");
+		SoundLoader = 4194304/44100;
+		printf("Emu: Changed to Double Speed 8.4 MHz\n");
 	} else {
 		CPUSpeed = 1;
-      //printf("Emu: Changed to Normal Speed 4.2 MHz\n");
+		SoundLoader = 4194304/44100;
+      printf("Emu: Changed to Normal Speed 4.2 MHz\n");
    }
 
 	gbz80.PC.uw++;
@@ -2630,15 +2659,15 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0x0C: inst_inc_c(); break;                 // INC C
       case 0x0D: inst_dec_c(); break;                 // DEC C
       case 0x0E: inst_ld_c_n(); break;                // LD C, $XX
-		case 0x0F: inst_rrca(); break;                  // RRCA
-		case 0x10: inst_stop(); break;                  // STOP
+      case 0x0F: inst_rrca(); break;                  // RRCA
+      case 0x10: inst_stop(); break;                  // STOP
       case 0x11: inst_ld_de_nn(); break;              // LD DE, $XXXX
       case 0x12: inst_ld_de_indirect_a(); break;      // LD [DE], A
       case 0x13: inst_inc_de(); break;                // INC DE
       case 0x14: inst_inc_d(); break;                 // INC D
       case 0x15: inst_dec_d(); break;                 // DEC D
       case 0x16: inst_ld_d_n(); break;                // LD D, $XX
-		case 0x17: inst_rla(); break;                   // RLA
+      case 0x17: inst_rla(); break;                   // RLA
       case 0x18: inst_jr_n(); break;                  // JR $XX
       case 0x19: inst_add_hl_de(); break;             // ADD HL, DE
       case 0x1A: inst_ld_a_de_indirect(); break;      // LD A, [DE]
@@ -2662,7 +2691,7 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0x2C: inst_inc_l(); break;                 // INC L
       case 0x2D: inst_dec_l(); break;                 // DEC L
       case 0x2E: inst_ld_l_n(); break;                // LD L, $XX
-		case 0x2F: inst_cpl(); break;                   // CPL
+      case 0x2F: inst_cpl(); break;                   // CPL
       case 0x30: inst_jr_nc_n(); break;               // JR NC, $XX
       case 0x31: inst_ld_sp_nn(); break;              // LD SP, $XXXX
       case 0x32: inst_ld_hld_indirect_a(); break;     // LD [HL-], A
@@ -2670,18 +2699,18 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0x34: inst_inc_hl_indirect(); break;       // INC [HL]
       case 0x35: inst_dec_hl_indirect(); break;       // DEC [HL]
       case 0x36: inst_ld_hl_indirect_n(); break;      // LD [HL], $XX
-		case 0x37: inst_scf(); break;                   // SCF
+      case 0x37: inst_scf(); break;                   // SCF
       case 0x38: inst_jr_c_n(); break;                // JR C, $XX
       case 0x39: inst_add_hl_sp(); break;             // ADD HL, SP
       case 0x3A: inst_ld_a_hld_indirect(); break;     // LD A, [HL-]
-		case 0x3B: inst_dec_sp(); break;                // DEC SP
+      case 0x3B: inst_dec_sp(); break;                // DEC SP
       case 0x3C: inst_inc_a(); break;                 // INC A
       case 0x3D: inst_dec_a(); break;                 // DEC A
       case 0x3E: inst_ld_a_n(); break;                // LD A, $XX
-		case 0x3F: inst_ccf(); break;                   // CCF
+      case 0x3F: inst_ccf(); break;                   // CCF
 
-		// LD B, n
-		case 0x40: break; // LD B, B
+      // LD B, n
+      case 0x40: break; // LD B, B
       case 0x41: inst_ld_b_c(); break;
       case 0x42: inst_ld_b_d(); break;
       case 0x43: inst_ld_b_e(); break;
@@ -2849,7 +2878,7 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0xC4: inst_call_nz_nn(); break;// CALL NZ, $XXXX
       case 0xC5: inst_push_bc(); break;   // PUSH BC
       case 0xC6: inst_add_a_n(); break;   // ADD A, $XX
-		case 0xC7: inst_rst_00h(); break;   // RST $00
+      case 0xC7: inst_rst_00h(); break;   // RST $00
       case 0xC8: inst_ret_z(); break;     // RET Z
       case 0xC9: inst_ret(); break;       // RET
       case 0xCA: inst_jp_z_nn(); break;   // JP Z, $XXXX
@@ -2857,7 +2886,7 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0xCC: inst_call_z_nn(); break; // CALL Z, $XXXX
       case 0xCD: inst_call_nn(); break;   // CALL $XXXX */
       case 0xCE: inst_adc_a_n(); break;   // ADC A, $XX
-		case 0xCF: inst_rst_08h(); break;   // RST $08
+      case 0xCF: inst_rst_08h(); break;   // RST $08
       case 0xD0: inst_ret_nc(); break;    // RET NC
       case 0xD1: inst_pop_de(); break;    // POP DE
       case 0xD2: inst_jp_nc_nn(); break;  // JP NC, $XXXX
@@ -2878,7 +2907,7 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0xE1: inst_pop_hl(); break;    // POP HL
       case 0xE2: inst_ld_c_indirect_a(); break; // LD (C), A
    // case 0xE3: // UNKNOWN
-	// case 0xE4: // UNKNOWN
+   // case 0xE4: // UNKNOWN
       case 0xE5: inst_push_hl(); break;   // PUSH HL
       case 0xE6: inst_and_n(); break;     // AND $XX
       case 0xE7: inst_rst_20h(); break;   // RST $20
@@ -2886,8 +2915,8 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0xE9: inst_jp_hl(); break;     // JP HL
       case 0xEA: inst_ld_nn_indirect_a(); break; // LD [$XXXX], A
    // case 0xEB: // UNKNOWN
-	// case 0xEC: // UNKNOWN
-	// case 0xED: // UNKNOWN
+   // case 0xEC: // UNKNOWN
+   // case 0xED: // UNKNOWN
       case 0xEE: INST_XOR(memory_read_pc_byte()); gbz80.PC.uw++; break; // XOR $XX
       case 0xEF: inst_rst_28h(); break;   // RST $28
       case 0xF0: inst_ld_a_ff_n_indirect(); break; // LD A, [$FFXX]
@@ -2899,11 +2928,11 @@ void gameboy_cpu_execute_opcode(unsigned char OpCode)
       case 0xF6: inst_or_n(); break;      // OR $XX
       case 0xF7: inst_rst_30h(); break;   // RST $30
       case 0xF8: inst_ld_hl_sp_n(); break;// LD HL, SP+$XX
-		case 0xF9: inst_ld_sp_hl(); break;  // LD SP, HL
+      case 0xF9: inst_ld_sp_hl(); break;  // LD SP, HL
       case 0xFA: inst_ld_a_nn_indirect(); break; // LD A, [$XXXX]
       case 0xFB: inst_ei(); break;        // EI
    // case 0xFC: // UNKNOWN
-	// case 0xFD: // UNKNOWN
+   // case 0xFD: // UNKNOWN
       case 0xFE: inst_cp_n(); break;      // CP $XX
       case 0xFF: inst_rst_38h(); break;   // RST $38
 

@@ -43,11 +43,6 @@ extern "C" {
 #include "common.h"
 #include "../sound.h"
 
-gameboy_proc_t *current_processor = NULL;
-unsigned char gameboy_screen_mul  = 1;
-force_type force_system           = NONE;
-int infogb_ready                  = 0;
-
 // for video
 static const unsigned long infogb_window_width = 160;
 static const unsigned long infogb_window_height = 144;
@@ -62,7 +57,7 @@ int g_ShowFPS = 0;
 // Sound
 int g_SndSample = 0;
 int g_SndSampler = 44100;
-static int g_SamplePos = 0;
+int g_SamplePos = 0;
 short int *g_SndBuff;
 struct audsrv_fmt_t format;
 bool g_SndUpdate = false;
@@ -95,6 +90,24 @@ int PS2_FPSMeasure() {
    }
 
    return LastFps;
+}
+
+/////////////////////////////////////////////////////////////
+int infogb_load_rom(char *filepath) {
+   char *name = strrchr(filepath, '/');
+
+   if ( !name )
+      return 0;
+
+   name++;
+
+   unsigned int length = ( g_PS2Browser.getCurrentSaveDevice() == DEV_USBMASS ) ?
+      MAX_FILENAME_CHARS : 31;
+
+   if ( strlen(name) > length )
+      return -4;
+
+   return load_rom(filepath);
 }
 
 /////////////////////////////////////////////////////////////
@@ -139,7 +152,7 @@ int main(int argc, char **argv)
 	format.bits = 16;
 	format.freq = 44100;
 	format.channels = 2;
-	audsrv_set_format(&format);
+   audsrv_set_format(&format);
 
 	guiFadeOut(4);
    DisplayIntroBox(APP_NAME);
@@ -172,7 +185,7 @@ int main(int argc, char **argv)
          auto_ROM_flag = 0;
       }
 
-      int res = load_rom(g_FilePath);
+      int res = infogb_load_rom(g_FilePath);
 
       // KarasQ: display error and return to
       // browser if ROM is not loaded successfully
@@ -287,26 +300,19 @@ void infogb_vram_blit()
 
    if ( g_Stretch == 2 ) {
       gp_texrect(&thegp, 0, 16, 0, 0, 320, (256-16), 160, 144, 2,
-         GS_SET_RGBA(0xFF, 0xFF, 0xFF, 0x80));
+         GS_SET_RGBA(0x00, 0x00, 0x00, 0x80));
    } else if ( g_Stretch == 1 ) {
       gp_texrect(&thegp, 40, 20, 0, 0, (240+40), (216+20), 160, 144, 2,
-         GS_SET_RGBA(0xFF, 0xFF, 0xFF, 0x80));
+         GS_SET_RGBA(0x00, 0x00, 0x00, 0x80));
    } else {
       gp_texrect(&thegp, 80, 56, 0, 0, (160+80), (144+56), 160, 144, 2,
-         GS_SET_RGBA(0xFF, 0xFF, 0xFF, 0x80));
+         GS_SET_RGBA(0x00, 0x00, 0x00, 0x80));
    }
 
    if ( g_ShowFPS ) {
       char strInfo[32];
       sprintf(strInfo, "FPS Rate: %i", PS2_FPSMeasure());
       TextOut(15, 30, strInfo, 3);
-   }
-
-   if ( SoundEnabled ) {
-      audsrv_play_audio((char*)g_SndBuff, g_SamplePos<<1);
-      audsrv_wait_audio(g_SamplePos<<1);
-
-      g_SamplePos = 0;
    }
 
    UpdateDrawing();
@@ -317,7 +323,8 @@ void infogb_write_sample(short int l, short int r)
 {
    if ( g_SamplePos+2 >= g_SndSampler << 2 ) {
       //printf("Sound buffer overloaded! (%ib)\n", g_SamplePos);
-      g_SamplePos = 0;
+      return;
+      //g_SamplePos = 0;
    }
 
    g_SndBuff[g_SamplePos++] = l;

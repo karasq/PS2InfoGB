@@ -78,16 +78,13 @@ int load_rom(char *filename)
 
    char *name = strrchr(filename, '/');
 
-   if ( name ) {
-      name++;
+   if ( !name )
+      return -4;
 
-      if ( strlen(name) > 32) {
-         return -4;
-      }
+   name++;
 
-      sprintf(tempname, "%s", name);
-      cartridge_fname = tempname;
-   }
+   sprintf(tempname, "%s", name);
+   cartridge_fname = tempname;
 
    if ( check_zip(filename) ) {
       char tmpnom[0x100];
@@ -185,14 +182,6 @@ int load_rom(char *filename)
 
    if ( cartridge_rom[0x146] == 0x03 )
       super_gameboy = 1;
-
-   if ( force_system == REGULAR ) {
-      //super_gameboy = 0;
-      color_gameboy = 0;
-   } else if ( force_system == COLOR ) {
-      //super_gameboy = 0;
-      color_gameboy = 1;
-   }
 
    if ( color_gameboy )
       printf("Color Gameboy");

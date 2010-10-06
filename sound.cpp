@@ -37,7 +37,7 @@ int SoundCycle = 0;
 #ifdef AMIGA
 int SoundLoader = 4194304/22050;
 #else
-const int SoundLoader = 4194304/44100;
+int SoundLoader = 4194304/44100;
 #endif
 int SoundEnabled = 1;
 
@@ -105,7 +105,7 @@ void ProcessSound(int cycles)
           l = 0; r = 0;
           dat = 0; snd = 0;
 
-          if (sOn) {
+          //if (sOn) {
                #if 1
                if (s1Play) {
                     if (s1Freq < 2043) {
@@ -341,7 +341,7 @@ void ProcessSound(int cycles)
                     }
                }
                #endif
-          }
+         // }
 
           //l >>= 2;
           //r >>= 2;
@@ -573,7 +573,6 @@ void SoundWrite(unsigned char reg, unsigned char v)
                     sOn = 0;
                     s1Play = 0;
                     s2Play = 0;
-                    s3On = 0;
                     s3Play = 0;
                     s4Play = 0;
                }
